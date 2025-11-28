@@ -1,0 +1,20 @@
+{
+  "voice_id": "test_voice",
+  "name": "Test Voice",
+  "created_at": 1764292626.0195427,
+  "source_audio": "test_voices\\test_voice\\reference.wav",
+  "embedding_path": "test_voices\\test_voice\\embedding.pt",
+  "engine": "xtts",
+  "metadata": {
+    "gpt_cond_latent_shape": [
+      1,
+      32,
+      1024
+    ],
+    "speaker_embedding_shape": [
+      1,
+      512,
+      1
+    ]
+  }
+}

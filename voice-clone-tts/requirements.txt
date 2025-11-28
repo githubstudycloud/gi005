@@ -1,0 +1,25 @@
+# 基础依赖
+torch>=2.0.0
+torchaudio>=2.0.0
+numpy>=1.21.0
+scipy>=1.7.0
+
+# ChatTTS
+chattts>=0.1.0
+
+# Coqui TTS (XTTS-v2)
+TTS>=0.22.0
+
+# SpeechBrain (说话人嵌入)
+speechbrain>=1.0.0
+
+# OpenVoice (需要从源码安装)
+# git clone https://github.com/myshell-ai/OpenVoice.git
+# cd OpenVoice && pip install -e .
+
+# pyannote-audio (可选，需要 HuggingFace token)
+# pyannote.audio>=3.1.0
+
+# 音频处理
+librosa>=0.10.0
+soundfile>=0.12.0
