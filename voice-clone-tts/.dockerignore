@@ -1,0 +1,54 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+*.egg-info/
+.eggs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
+tests/
+
+# Documentation
+*.md
+!README.md
+
+# Large files (should be mounted as volumes)
+*.pth
+*.pt
+*.bin
+*.onnx
+*.safetensors
+
+# Outputs
+voices/
+outputs/
+logs/
+*.wav
+*.mp3
+
+# Temp files
+*.tmp
+*.log
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
