@@ -28,15 +28,18 @@ from contextlib import asynccontextmanager
 
 # FastAPI
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, BackgroundTasks
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import asyncio
+import io
 
 # 添加当前目录到路径
 sys.path.insert(0, str(Path(__file__).parent))
 
 from common.base import VoiceClonerBase, VoiceEmbedding
 from common.utils import ensure_dir
+from common.audio_processor import AudioProcessor, preprocess_audio
 
 
 # ===================== 配置 =====================
@@ -95,6 +98,22 @@ class VoiceInfo(BaseModel):
     source_audio: str
 
 
+class StreamSynthesizeRequest(BaseModel):
+    """流式合成请求"""
+    text: str
+    voice_id: str
+    language: str = "zh"
+    chunk_size: int = 4096  # 每个chunk的大小（字节）
+
+
+class BatchSynthesizeRequest(BaseModel):
+    """批量合成请求"""
+    texts: list[str]
+    voice_id: str
+    language: str = "zh"
+    output_format: str = "wav"
+
+
 # ===================== 初始化 =====================
 
 def create_cloner(engine: str) -> VoiceClonerBase:
@@ -145,11 +164,59 @@ async def lifespan(app: FastAPI):
 
 # ===================== FastAPI 应用 =====================
 
+# API 标签说明
+tags_metadata = [
+    {
+        "name": "health",
+        "description": "服务健康检查和信息查询",
+    },
+    {
+        "name": "voice",
+        "description": "音色管理：提取、列出、删除音色",
+    },
+    {
+        "name": "synthesis",
+        "description": "语音合成：普通合成、流式合成、批量合成",
+    },
+    {
+        "name": "audio",
+        "description": "音频处理：预处理、降噪、增强",
+    },
+]
+
 app = FastAPI(
-    title="Voice Clone API",
-    description="音色克隆 HTTP 服务",
-    version="1.0.0",
-    lifespan=lifespan
+    title="Voice Clone TTS API",
+    description="""
+# 音色克隆 TTS 服务 API
+
+支持多种 TTS 引擎的统一音色克隆服务。
+
+## 功能特性
+
+- **音色提取**: 从参考音频中提取说话人音色
+- **语音合成**: 使用提取的音色合成新语音
+- **流式合成**: 支持流式返回音频数据
+- **批量合成**: 一次性合成多段文本
+- **音频预处理**: 降噪、去静音、增强等
+
+## 支持的引擎
+
+- **XTTS-v2**: Coqui 的跨语言 TTS 模型
+- **OpenVoice**: MyShell 的音色克隆模型
+- **GPT-SoVITS**: 高质量少样本 TTS 模型
+
+## 快速开始
+
+1. 上传参考音频提取音色 (`POST /extract_voice`)
+2. 使用音色ID合成语音 (`POST /synthesize`)
+3. 或直接使用参考音频合成 (`POST /synthesize_direct`)
+    """,
+    version="2.1.0",
+    lifespan=lifespan,
+    openapi_tags=tags_metadata,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json"
 )
 
 # CORS
@@ -405,6 +472,238 @@ async def delete_voice(voice_id: str):
         return {"success": True, "message": f"音色 {voice_id} 已删除"}
     else:
         raise HTTPException(404, f"音色不存在: {voice_id}")
+
+
+# ===================== 流式合成 =====================
+
+@app.post("/synthesize_stream")
+async def synthesize_stream(request: StreamSynthesizeRequest):
+    """
+    流式合成语音 - 边合成边返回音频数据
+
+    适用于长文本或需要实时播放的场景。
+    返回的是原始 PCM 音频流 (16kHz, 16bit, mono)。
+
+    Args:
+        text: 文本内容
+        voice_id: 音色ID
+        language: 语言代码
+        chunk_size: 每个数据块大小
+
+    Returns:
+        流式音频数据 (audio/pcm)
+    """
+    if not cloner:
+        raise HTTPException(500, "服务未初始化")
+
+    # 检查音色是否存在
+    voice_dir = Path(config.VOICES_DIR) / request.voice_id
+    if not voice_dir.exists():
+        raise HTTPException(404, f"音色不存在: {request.voice_id}")
+
+    async def audio_generator():
+        """生成音频数据块"""
+        # 先完整合成，然后分块返回
+        # TODO: 未来可以支持真正的流式合成（需要引擎支持）
+        output_path = Path(config.OUTPUT_DIR) / f"stream_{uuid.uuid4().hex}.wav"
+
+        try:
+            # 合成完整音频
+            cloner.synthesize(
+                text=request.text,
+                voice=str(voice_dir),
+                output_path=str(output_path),
+                language=request.language
+            )
+
+            # 读取并分块返回
+            with open(output_path, 'rb') as f:
+                # 跳过 WAV 头（44字节）
+                f.seek(44)
+                while True:
+                    chunk = f.read(request.chunk_size)
+                    if not chunk:
+                        break
+                    yield chunk
+                    await asyncio.sleep(0)  # 让出控制权
+
+        finally:
+            # 清理临时文件
+            if output_path.exists():
+                output_path.unlink()
+
+    return StreamingResponse(
+        audio_generator(),
+        media_type="audio/pcm",
+        headers={
+            "X-Audio-Sample-Rate": "24000",
+            "X-Audio-Channels": "1",
+            "X-Audio-Bit-Depth": "16"
+        }
+    )
+
+
+# ===================== 批量合成 =====================
+
+@app.post("/synthesize_batch")
+async def synthesize_batch(request: BatchSynthesizeRequest, background_tasks: BackgroundTasks):
+    """
+    批量合成多段文本
+
+    为每段文本生成独立的音频文件，返回任务ID供后续查询。
+
+    Args:
+        texts: 文本列表
+        voice_id: 音色ID
+        language: 语言代码
+        output_format: 输出格式
+
+    Returns:
+        批量合成结果列表
+    """
+    if not cloner:
+        raise HTTPException(500, "服务未初始化")
+
+    # 检查音色是否存在
+    voice_dir = Path(config.VOICES_DIR) / request.voice_id
+    if not voice_dir.exists():
+        raise HTTPException(404, f"音色不存在: {request.voice_id}")
+
+    # 限制批量大小
+    if len(request.texts) > 100:
+        raise HTTPException(400, "批量合成最多支持100条文本")
+
+    batch_id = uuid.uuid4().hex
+    results = []
+
+    for i, text in enumerate(request.texts):
+        if not text.strip():
+            results.append({
+                "index": i,
+                "success": False,
+                "error": "文本为空"
+            })
+            continue
+
+        output_filename = f"batch_{batch_id}_{i:03d}.{request.output_format}"
+        output_path = Path(config.OUTPUT_DIR) / output_filename
+
+        try:
+            cloner.synthesize(
+                text=text,
+                voice=str(voice_dir),
+                output_path=str(output_path),
+                language=request.language
+            )
+
+            results.append({
+                "index": i,
+                "success": True,
+                "filename": output_filename,
+                "download_url": f"/outputs/{output_filename}"
+            })
+
+        except Exception as e:
+            results.append({
+                "index": i,
+                "success": False,
+                "error": str(e)
+            })
+
+    return {
+        "batch_id": batch_id,
+        "total": len(request.texts),
+        "success_count": sum(1 for r in results if r.get("success")),
+        "results": results
+    }
+
+
+@app.get("/outputs/{filename}")
+async def download_output(filename: str):
+    """下载输出文件"""
+    file_path = Path(config.OUTPUT_DIR) / filename
+
+    if not file_path.exists():
+        raise HTTPException(404, "文件不存在")
+
+    # 安全检查：确保文件在输出目录内
+    try:
+        file_path.resolve().relative_to(Path(config.OUTPUT_DIR).resolve())
+    except ValueError:
+        raise HTTPException(403, "禁止访问")
+
+    return FileResponse(
+        file_path,
+        media_type="audio/wav",
+        filename=filename
+    )
+
+
+# ===================== 音频预处理 =====================
+
+@app.post("/preprocess")
+async def preprocess_audio_endpoint(
+    audio: UploadFile = File(...),
+    denoise: bool = Form(True),
+    remove_silence: bool = Form(True),
+    enhance: bool = Form(True),
+    normalize: bool = Form(True),
+    max_duration: float = Form(30.0)
+):
+    """
+    音频预处理
+
+    对上传的音频进行降噪、去静音、增强等处理。
+    适合在提取音色前优化参考音频质量。
+
+    Args:
+        audio: 音频文件
+        denoise: 是否降噪
+        remove_silence: 是否移除静音
+        enhance: 是否增强
+        normalize: 是否归一化
+        max_duration: 最大时长（秒）
+
+    Returns:
+        处理后的音频文件
+    """
+    # 保存上传的音频
+    temp_input = tempfile.NamedTemporaryFile(
+        suffix=Path(audio.filename).suffix,
+        delete=False
+    )
+
+    try:
+        content = await audio.read()
+        temp_input.write(content)
+        temp_input.close()
+
+        # 处理音频
+        processor = AudioProcessor()
+        output_filename = f"processed_{uuid.uuid4().hex}.wav"
+        output_path = Path(config.OUTPUT_DIR) / output_filename
+
+        processor.process(
+            audio_path=temp_input.name,
+            output_path=str(output_path),
+            denoise=denoise,
+            remove_silence=remove_silence,
+            enhance=enhance,
+            normalize=normalize,
+            max_duration=max_duration
+        )
+
+        return FileResponse(
+            output_path,
+            media_type="audio/wav",
+            filename=output_filename
+        )
+
+    except Exception as e:
+        raise HTTPException(500, f"处理失败: {str(e)}")
+
+    finally:
+        os.unlink(temp_input.name)
 
 
 # ===================== 入口 =====================

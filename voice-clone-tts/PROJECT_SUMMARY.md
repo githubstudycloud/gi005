@@ -294,22 +294,27 @@ client.synthesize_to_file("你好世界", voice["voice_id"], "output.wav")
 
 ## 七、后续计划
 
-### 7.1 待优化
+### 7.1 已完成 (v2.1)
 
-- [ ] 添加流式合成支持
-- [ ] 添加音频预处理（降噪、增强）
-- [ ] 添加批量合成接口
+- [x] 添加流式合成支持 (`POST /synthesize_stream`)
+- [x] 添加音频预处理（降噪、增强） (`POST /preprocess`)
+- [x] 添加批量合成接口 (`POST /synthesize_batch`)
+- [x] 添加 OpenAPI/Swagger 文档 (`/docs`, `/redoc`)
+
+### 7.2 待优化
+
 - [ ] 添加 WebSocket 实时合成
+- [ ] GPT-SoVITS 模型下载和验证（网络问题导致下载超时）
+- [ ] 完善真正的流式合成（需要引擎支持）
 
-### 7.2 待添加引擎
+### 7.3 待添加引擎
 
 - [ ] 将 CosyVoice 集成到 production
 - [ ] 将 Fish-Speech 集成到 production
 - [ ] 添加 ChatTTS 支持
 
-### 7.3 文档完善
+### 7.4 文档完善
 
-- [ ] 添加 API 文档 (OpenAPI/Swagger)
 - [ ] 添加性能测试报告
 - [ ] 添加各引擎对比评测
 
@@ -410,9 +415,48 @@ client.synthesize_to_file("你好世界", voice["voice_id"], "output.wav")
 
 ---
 
+## 十一、版本更新日志
+
+### v2.1.0 (2025-11-28)
+
+**新增功能：**
+- 流式合成 API (`POST /synthesize_stream`) - 支持边合成边返回音频数据
+- 批量合成 API (`POST /synthesize_batch`) - 一次性合成多段文本
+- 音频预处理 API (`POST /preprocess`) - 降噪、去静音、增强等
+- 音频预处理模块 (`common/audio_processor.py`)
+- OpenAPI/Swagger 文档 (`/docs`, `/redoc`, `/openapi.json`)
+
+**改进：**
+- 更新 FastAPI 应用配置，增强 API 文档
+- 添加 API 标签分类
+- 版本号升级到 2.1.0
+
+**待解决：**
+- GPT-SoVITS 模型下载因网络问题超时，待后续解决
+
+### v2.0.0 (2025-11-28)
+
+**新增功能：**
+- `requirements-freeze.txt` - 锁定所有依赖版本
+- `pyproject.toml` - 支持 pip install -e .
+- `config.yaml` - 统一配置文件
+- `scripts/install.bat` / `install.sh` - 一键安装脚本
+- `common/logger.py` - 统一日志系统
+- `tests/` - pytest 测试框架
+- `Dockerfile` + `docker-compose.yml` - Docker 部署
+
+### v1.0.0 (2025-11-27)
+
+- 初始版本
+- 支持 XTTS-v2、OpenVoice、GPT-SoVITS 三个引擎
+- 完整的 HTTP API 和命令行工具
+- 离线部署支持
+
+---
+
 ## 版本信息
 
-- 文档版本: 1.1
+- 文档版本: 1.2
 - 创建日期: 2025-11-27
 - 更新日期: 2025-11-28
 - 仓库地址: https://github.com/githubstudycloud/gi005
