@@ -1,0 +1,97 @@
+# ============================================================
+# 音色克隆 TTS 配置文件
+# Voice Clone TTS Configuration
+# ============================================================
+
+# 服务配置
+server:
+  host: "0.0.0.0"           # 监听地址
+  port: 8000                 # 监听端口
+  workers: 1                 # 工作进程数（建议 1，避免模型多次加载）
+  reload: false              # 开发模式热重载
+
+# 引擎配置
+engine:
+  # 默认使用的引擎: xtts, openvoice, gpt-sovits
+  default: "xtts"
+
+  # XTTS-v2 引擎配置
+  xtts:
+    model_path: ""           # 模型路径，留空使用默认 (tts_model/xtts_v2)
+    device: "auto"           # 设备: auto, cuda, cpu
+    use_deepspeed: false     # 是否使用 DeepSpeed 加速
+    compute_type: "float16"  # 计算精度: float16, float32
+
+  # OpenVoice 引擎配置
+  openvoice:
+    model_path: ""           # 模型路径，留空使用默认 (checkpoints_v2/converter)
+    device: "auto"           # 设备: auto, cuda, cpu
+    use_vad: true            # 是否使用 VAD 切分
+    base_speaker: "en-US-AriaNeural"  # edge-tts 基础音色
+
+  # GPT-SoVITS 引擎配置 (通过 API 调用)
+  gpt_sovits:
+    api_host: "127.0.0.1"    # GPT-SoVITS 服务地址
+    api_port: 9880           # GPT-SoVITS 服务端口
+    timeout: 60              # 请求超时（秒）
+
+# 目录配置
+paths:
+  voices_dir: "./voices"     # 音色存储目录
+  output_dir: "./outputs"    # 输出文件目录
+  temp_dir: "./temp"         # 临时文件目录
+  log_dir: "./logs"          # 日志目录
+
+# 音频配置
+audio:
+  sample_rate: 22050         # 采样率 (XTTS 使用 22050, OpenVoice 使用 24000)
+  format: "wav"              # 默认输出格式
+  max_duration: 300          # 最大音频时长（秒）
+  min_duration: 1            # 最小参考音频时长（秒）
+
+# 日志配置
+logging:
+  level: "INFO"              # 日志级别: DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file:
+    enabled: true            # 是否输出到文件
+    max_size: "10MB"         # 单个日志文件最大大小
+    backup_count: 5          # 保留的日志文件数量
+  console:
+    enabled: true            # 是否输出到控制台
+    color: true              # 是否使用彩色输出
+
+# 缓存配置
+cache:
+  enabled: true              # 是否启用缓存
+  max_voices: 100            # 最大缓存音色数
+  max_memory: "2GB"          # 最大缓存内存
+
+# 安全配置
+security:
+  cors:
+    enabled: true
+    origins: ["*"]           # 允许的源
+  rate_limit:
+    enabled: false
+    requests_per_minute: 60  # 每分钟最大请求数
+
+# 性能配置
+performance:
+  batch_size: 1              # 批处理大小
+  num_threads: 4             # CPU 线程数
+  gpu_memory_fraction: 0.8   # GPU 显存使用比例
+
+# ============================================================
+# 环境变量覆盖
+# 以下环境变量可以覆盖配置文件中的设置:
+#
+# VOICE_ENGINE         - 默认引擎
+# VOICE_HOST           - 服务地址
+# VOICE_PORT           - 服务端口
+# VOICES_DIR           - 音色目录
+# OUTPUT_DIR           - 输出目录
+# MODEL_PATH           - 模型路径
+# DEVICE               - 计算设备
+# LOG_LEVEL            - 日志级别
+# ============================================================

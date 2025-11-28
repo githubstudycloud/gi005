@@ -1,0 +1,178 @@
+# ============================================================
+# Voice Clone TTS Docker Compose 配置
+# ============================================================
+#
+# 使用方法:
+#   启动服务:  docker-compose up -d
+#   查看日志:  docker-compose logs -f
+#   停止服务:  docker-compose down
+#
+# 注意: 首次启动需要下载模型，可能需要较长时间
+# ============================================================
+
+version: '3.8'
+
+services:
+  # XTTS-v2 引擎服务
+  voice-clone-xtts:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: voice-clone-tts:latest
+    container_name: voice-clone-xtts
+    restart: unless-stopped
+
+    # GPU 支持 (需要 nvidia-docker)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      # 音色存储（持久化）
+      - ./voices:/app/voices
+      # 输出目录（持久化）
+      - ./outputs:/app/outputs
+      # 日志目录
+      - ./logs:/app/logs
+      # 模型目录（挂载本地模型避免重复下载）
+      - ../tts_model:/app/tts_model:ro
+      - ../checkpoints_v2:/app/checkpoints_v2:ro
+
+    environment:
+      - VOICE_ENGINE=xtts
+      - VOICE_HOST=0.0.0.0
+      - VOICE_PORT=8000
+      - VOICES_DIR=/app/voices
+      - OUTPUT_DIR=/app/outputs
+      - MODEL_PATH=/app/tts_model/xtts_v2
+      - DEVICE=cuda
+      - LOG_LEVEL=INFO
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s  # 模型加载需要时间
+
+    networks:
+      - voice-clone-net
+
+  # OpenVoice 引擎服务 (可选)
+  voice-clone-openvoice:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: voice-clone-tts:latest
+    container_name: voice-clone-openvoice
+    restart: unless-stopped
+    profiles:
+      - openvoice  # 使用 --profile openvoice 启动
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+    ports:
+      - "8001:8000"
+
+    volumes:
+      - ./voices:/app/voices
+      - ./outputs:/app/outputs
+      - ./logs:/app/logs
+      - ../checkpoints_v2:/app/checkpoints_v2:ro
+      - ../OpenVoice:/app/OpenVoice:ro
+
+    environment:
+      - VOICE_ENGINE=openvoice
+      - VOICE_HOST=0.0.0.0
+      - VOICE_PORT=8000
+      - VOICES_DIR=/app/voices
+      - OUTPUT_DIR=/app/outputs
+      - MODEL_PATH=/app/checkpoints_v2/converter
+      - DEVICE=cuda
+      - LOG_LEVEL=INFO
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    networks:
+      - voice-clone-net
+
+  # CPU 版本 (无 GPU)
+  voice-clone-cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: voice-clone-tts:latest
+    container_name: voice-clone-cpu
+    restart: unless-stopped
+    profiles:
+      - cpu  # 使用 --profile cpu 启动
+
+    ports:
+      - "8002:8000"
+
+    volumes:
+      - ./voices:/app/voices
+      - ./outputs:/app/outputs
+      - ./logs:/app/logs
+      - ../tts_model:/app/tts_model:ro
+
+    environment:
+      - VOICE_ENGINE=xtts
+      - VOICE_HOST=0.0.0.0
+      - VOICE_PORT=8000
+      - DEVICE=cpu
+      - LOG_LEVEL=INFO
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 180s  # CPU 模式加载更慢
+
+    networks:
+      - voice-clone-net
+
+networks:
+  voice-clone-net:
+    driver: bridge
+
+# ============================================================
+# 使用示例:
+#
+# 1. 启动 XTTS 服务 (默认):
+#    docker-compose up -d
+#
+# 2. 启动 OpenVoice 服务:
+#    docker-compose --profile openvoice up -d voice-clone-openvoice
+#
+# 3. 启动 CPU 版本 (无 GPU):
+#    docker-compose --profile cpu up -d voice-clone-cpu
+#
+# 4. 同时启动多个服务:
+#    docker-compose --profile openvoice up -d
+#
+# 5. 查看日志:
+#    docker-compose logs -f voice-clone-xtts
+#
+# 6. 停止所有服务:
+#    docker-compose down
+# ============================================================

@@ -1,0 +1,130 @@
+# Voice Clone TTS - 锁定依赖版本
+# 生成时间: 2024-11
+# Python 版本: 3.10.11
+# 平台: Windows x64
+#
+# 安装方式:
+#   pip install -r requirements-freeze.txt
+#
+# 注意:
+#   - PyTorch 使用 CUDA 11.8 版本，如需 CPU 版本请修改
+#   - 部分包可能需要先安装 Visual Studio Build Tools
+
+# ===================== 核心依赖 =====================
+
+# PyTorch (CUDA 11.8)
+--extra-index-url https://download.pytorch.org/whl/cu118
+torch==2.5.1+cu118
+torchaudio==2.5.1+cu118
+
+# TTS 引擎
+TTS==0.22.0
+edge-tts==7.2.3
+
+# transformers (注意版本上限，避免兼容性问题)
+transformers==4.49.0
+tokenizers==0.21.4
+safetensors==0.7.0
+
+# ===================== 音频处理 =====================
+
+librosa==0.10.0
+soundfile==0.13.1
+audioread==3.1.0
+pydub==0.25.1
+resampy==0.4.3
+soxr==1.0.0
+
+# Whisper (语音识别/VAD)
+faster-whisper==1.2.1
+openai-whisper==20250625
+whisper-timestamped==1.15.9
+ctranslate2==4.4.0
+
+# ===================== Web 框架 =====================
+
+fastapi==0.122.0
+uvicorn==0.38.0
+python-multipart==0.0.20
+starlette==0.50.0
+pydantic==2.12.5
+
+# ===================== 科学计算 =====================
+
+numpy==2.2.6
+scipy==1.15.3
+scikit-learn==1.7.2
+pandas==1.5.3
+numba==0.62.1
+llvmlite==0.45.1
+
+# ===================== NLP/文本处理 =====================
+
+# 多语言音素处理
+gruut==2.2.3
+gruut-ipa==0.13.0
+gruut-lang-de==2.0.1
+gruut-lang-en==2.0.1
+gruut-lang-es==2.0.1
+gruut-lang-fr==2.0.2
+
+# 中文处理
+jieba==0.42.1
+pypinyin==0.55.0
+cn2an==0.5.23
+
+# spaCy
+spacy==3.8.11
+spacy-legacy==3.0.12
+spacy-loggers==1.0.5
+
+# 其他 NLP
+nltk==3.9.2
+inflect==7.5.0
+num2words==0.5.14
+Unidecode==1.4.0
+anyascii==0.3.3
+pysbd==0.3.4
+langid==1.1.6
+
+# ===================== 工具库 =====================
+
+# 配置
+PyYAML==6.0.3
+coqpit==0.0.17
+
+# 日志
+coloredlogs==15.0.1
+tqdm==4.67.1
+
+# 网络
+requests==2.32.5
+aiohttp==3.13.2
+huggingface-hub==0.36.0
+
+# 其他
+click==8.3.1
+Jinja2==3.1.3
+matplotlib==3.8.4
+pillow==12.0.0
+networkx==2.8.8
+einops==0.8.1
+encodec==0.1.1
+trainer==0.0.36
+
+# ===================== 日语支持 (可选) =====================
+
+SudachiPy==0.6.10
+SudachiDict-core==20251022
+
+# ===================== 韩语支持 (可选) =====================
+
+jamo==0.4.1
+g2pkk==0.1.2
+hangul-romanize==0.1.0
+
+# ===================== 孟加拉语支持 (可选) =====================
+
+bangla==0.0.5
+bnnumerizer==0.0.2
+bnunicodenormalizer==0.1.7
