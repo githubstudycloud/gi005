@@ -138,6 +138,10 @@ def remove_silence(
         return audio[mask]
 
 
+# 为类内部使用创建别名，避免参数名冲突
+_remove_silence = remove_silence
+
+
 def denoise_audio(
     audio: np.ndarray,
     sample_rate: int = 22050,
@@ -351,7 +355,7 @@ class AudioProcessor:
         audio_path: str,
         output_path: Optional[str] = None,
         denoise: bool = True,
-        remove_silence: bool = True,
+        do_remove_silence: bool = True,
         enhance: bool = True,
         normalize: bool = True,
         max_duration: float = 30.0
@@ -382,8 +386,8 @@ class AudioProcessor:
             audio = denoise_audio(audio, self.target_sr)
 
         # 移除静音
-        if remove_silence:
-            audio = remove_silence(audio, self.target_sr)
+        if do_remove_silence:
+            audio = _remove_silence(audio, self.target_sr)
 
         # 增强
         if enhance:
@@ -422,7 +426,7 @@ class AudioProcessor:
             audio_path=audio_path,
             output_path=output_path,
             denoise=True,
-            remove_silence=True,
+            do_remove_silence=True,
             enhance=True,
             normalize=True,
             max_duration=30.0
