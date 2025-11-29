@@ -687,7 +687,7 @@ async def preprocess_audio_endpoint(
             audio_path=temp_input.name,
             output_path=str(output_path),
             denoise=denoise,
-            remove_silence=remove_silence,
+            do_remove_silence=remove_silence,
             enhance=enhance,
             normalize=normalize,
             max_duration=max_duration
