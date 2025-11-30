@@ -1,7 +1,11 @@
 # ============================================================
 # Voice Clone TTS .gitignore
-# v3.1 微服务架构
+# v3.2 微服务架构
 # ============================================================
+
+# Windows special files
+nul
+NUL
 
 # Dependencies
 node_modules/

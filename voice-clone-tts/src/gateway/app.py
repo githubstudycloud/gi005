@@ -119,7 +119,7 @@ class GatewayApp:
 
         app = FastAPI(
             title="Voice Clone TTS Gateway",
-            version="3.2.2",
+            version="3.2.3",
             description="企业级语音克隆 TTS 服务网关",
             lifespan=lifespan,
         )

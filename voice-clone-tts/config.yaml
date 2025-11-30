@@ -13,6 +13,9 @@ gateway:
   heartbeat_interval: 10     # 心跳间隔（秒）
   dead_threshold: 30         # 节点死亡阈值（秒）
   ws_broadcast_interval: 2.0 # WebSocket 状态广播间隔（秒）
+  request_timeout: 60.0      # API 请求超时（秒）
+  batch_timeout: 120.0       # 批量请求超时（秒）
+  health_check_timeout: 5.0  # 健康检查超时（秒）
 
 # 工作节点配置
 workers:

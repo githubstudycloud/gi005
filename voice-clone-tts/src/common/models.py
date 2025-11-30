@@ -215,6 +215,11 @@ class SystemConfig(BaseModel):
     # WebSocket 配置
     ws_broadcast_interval: float = 2.0  # 状态广播间隔（秒）
 
+    # 超时配置（秒）
+    request_timeout: float = 60.0      # API 请求超时
+    batch_timeout: float = 120.0       # 批量请求超时
+    health_check_timeout: float = 5.0  # 健康检查超时
+
 
 class SystemStatus(BaseModel):
     """系统状态概览"""
@@ -236,7 +241,7 @@ class SystemStatus(BaseModel):
 class HealthCheck(BaseModel):
     """健康检查结果"""
     status: str = "healthy"  # healthy, degraded, unhealthy
-    version: str = "3.2.2"
+    version: str = "3.2.3"
     uptime_seconds: float = 0.0
     timestamp: float = Field(default_factory=time.time)
 

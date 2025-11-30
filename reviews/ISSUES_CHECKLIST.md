@@ -56,14 +56,14 @@
 ### 代码质量
 - [ ] **CODE-003**: 补充类型注解 `openvoice_worker.py`
 - [ ] **CODE-004**: 修复反模式导入
-- [ ] **CODE-005**: 提取超时值为配置
+- [x] **CODE-005**: 提取超时值为配置 - 已添加 request_timeout, batch_timeout, health_check_timeout
 - [x] **CODE-006**: 添加 WebSocket 异常日志 - 已添加 JSON 解析错误日志
 - [ ] **CODE-007**: 封装全局状态
 - [x] **CFG-001**: 提取 WebSocket 广播间隔硬编码 `app.py:95` 到配置 - 已添加 ws_broadcast_interval 配置项
 
 ### 部署
 - [x] **CODE-GPU**: GPU 指标异常处理 `base_worker.py:356-360` - 已分离 ImportError 和其他异常
-- [ ] **DEPLOY-010**: 使用版本标签替代 :latest
+- [x] **DEPLOY-010**: 使用版本标签替代 :latest - 已更新为 voice-clone-tts:3.2.3
 
 ---
 
@@ -103,16 +103,23 @@
 | 优先级 | 总计 | 已修复 | 未修复 | 完成率 |
 |--------|------|--------|--------|--------|
 | P0 | 14 | 14 | 0 | 100% |
-| P1 | 18 | 8 | 10 | 44% |
+| P1 | 18 | 10 | 8 | 56% |
 | P2 | 9 | 1 | 8 | 11% |
 | P3 | 5 | 0 | 5 | 0% |
-| **总计** | **46** | **23** | **23** | **50%** |
+| **总计** | **46** | **25** | **21** | **54%** |
 
-> 注: v3.2.2 修复了版本一致性和依赖版本问题
+> 注: v3.2.3 修复了 Docker 版本标签和超时配置问题
 
 ---
 
 ## 已修复问题详情
+
+### v3.2.3 修复 (2025-11-30)
+
+1. **CODE-005** 提取超时值为配置 (request_timeout, batch_timeout, health_check_timeout)
+2. **DEPLOY-010** Docker 镜像使用版本标签 voice-clone-tts:3.2.3 替代 :latest
+3. 统一版本号为 3.2.3 (pyproject.toml, models.py, app.py)
+4. 添加 Windows 特殊文件 nul/NUL 到 .gitignore
 
 ### v3.2.2 修复 (2025-11-30)
 
@@ -172,10 +179,10 @@ pytest -v tests/
 
 ## 剩余 Critical 问题
 
-✅ **所有 P0 Critical 问题已修复！** 可以发布 v3.2.1 版本。
+✅ **所有 P0 Critical 问题已修复！** 可以发布 v3.2.3 版本。
 
 剩余 P1/P2/P3 问题将在后续迭代中处理。
 
 ---
 
-**v3.2.1 发布就绪**: 所有 Critical 问题已修复，可提交发布。
+**v3.2.3 发布就绪**: 所有 Critical 问题已修复，P1 完成率 56%，可提交发布。

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "voice-clone-tts"
-version = "3.2.2"
+version = "3.2.3"
 description = "企业级语音克隆微服务系统，支持 XTTS-v2、OpenVoice、GPT-SoVITS"
 readme = "README.md"
 license = {text = "MIT"}
