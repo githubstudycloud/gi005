@@ -42,8 +42,17 @@ FROM base AS dependencies
 # 复制依赖文件
 COPY requirements.txt requirements-freeze.txt ./
 
-# 安装 PyTorch (CUDA 11.8)
-RUN pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu118
+# 配置 pip 使用多镜像源 (先配置，后安装)
+# 阿里云主用，清华备用，PyPI 官方兜底
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/ && \
+    pip config set global.extra-index-url "https://pypi.tuna.tsinghua.edu.cn/simple/ https://pypi.org/simple/" && \
+    pip config set global.trusted-host "mirrors.aliyun.com pypi.tuna.tsinghua.edu.cn pypi.org" && \
+    pip config set global.timeout 120
+
+# 安装 PyTorch (CUDA 11.8) - 使用清华镜像加速
+# 清华大学提供 PyTorch 官方索引的镜像
+RUN pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://mirrors.aliyun.com/pytorch-wheels/cu118/ --trusted-host mirrors.aliyun.com || \
+    pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu118 --timeout 300
 
 # 安装其他依赖
 RUN pip install -r requirements.txt

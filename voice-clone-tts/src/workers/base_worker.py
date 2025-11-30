@@ -166,8 +166,12 @@ class BaseWorker(ABC):
         if self.gateway_url:
             self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())
 
-        self._status = WorkerStatus.STANDBY
-        logger.info(f"Worker {self.node_id} started")
+        # 如果模型已加载，保持 READY 状态；否则设为 STANDBY
+        if self._model_loaded:
+            self._status = WorkerStatus.READY
+        else:
+            self._status = WorkerStatus.STANDBY
+        logger.info(f"Worker {self.node_id} started (status: {self._status.value})")
 
     async def stop(self, timeout: float = 30.0):
         """
@@ -221,6 +225,8 @@ class BaseWorker(ABC):
             是否成功
         """
         if self._model_loaded:
+            # 模型已加载，确保状态是 READY
+            self._status = WorkerStatus.READY
             return True
 
         self._status = WorkerStatus.LOADING

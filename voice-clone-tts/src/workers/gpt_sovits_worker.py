@@ -72,8 +72,8 @@ class GPTSoVITSWorker(BaseWorker):
 
             self._client = httpx.AsyncClient(timeout=60.0)
 
-            # 检查 API 服务是否可用
-            resp = await self._client.get(f"{self.api_url}/")
+            # 检查 API 服务是否可用 (使用 /docs 端点，因为根路径返回 404)
+            resp = await self._client.get(f"{self.api_url}/docs")
             if resp.status_code == 200:
                 logger.info("GPT-SoVITS API connected successfully")
                 return True

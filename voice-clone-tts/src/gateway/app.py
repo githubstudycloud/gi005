@@ -202,7 +202,7 @@ class GatewayApp:
 
             return HealthCheck(
                 status=status,
-                version="3.0.0",
+                version=app.version,  # 从 FastAPI app 读取版本，保持一致
                 uptime_seconds=time.time() - self._start_time,
                 components={
                     "registry": {

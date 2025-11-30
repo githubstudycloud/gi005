@@ -246,7 +246,7 @@ def run_worker(args):
 
     if args.auto_load:
         import asyncio
-        asyncio.get_event_loop().run_until_complete(worker.activate())
+        asyncio.run(worker.activate())
 
     worker.run()
 

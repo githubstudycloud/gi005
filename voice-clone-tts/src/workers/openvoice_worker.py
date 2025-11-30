@@ -5,6 +5,21 @@ OpenVoice 工作节点
 """
 
 import os
+import sys
+
+# ===================== FFmpeg 路径配置 (必须在任何导入之前) =====================
+# 获取项目根目录并设置 FFmpeg 路径到环境变量
+_this_file = os.path.abspath(__file__)
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(_this_file))))
+_ffmpeg_dir = os.path.join(_project_root, "packages", "tools", "extracted")
+
+if os.path.exists(_ffmpeg_dir):
+    # 将 FFmpeg 目录添加到 PATH 的开头
+    _current_path = os.environ.get("PATH", "")
+    if _ffmpeg_dir not in _current_path:
+        os.environ["PATH"] = _ffmpeg_dir + os.pathsep + _current_path
+# ===========================================================================
+
 import io
 import json
 import uuid
@@ -14,10 +29,25 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 
 from ..common.models import EngineType, VoiceInfo
-from ..common.paths import OPENVOICE_MODEL_PATH, VOICES_DIR
+from ..common.paths import OPENVOICE_MODEL_PATH, VOICES_DIR, FFMPEG_PATH, FFPROBE_PATH
 from .base_worker import BaseWorker
 
 logger = logging.getLogger(__name__)
+
+
+def _configure_ffmpeg():
+    """配置 pydub 使用的 FFmpeg 路径"""
+    if FFMPEG_PATH.exists():
+        # 配置 pydub 的 FFmpeg 路径
+        from pydub import AudioSegment
+        AudioSegment.converter = str(FFMPEG_PATH)
+        if FFPROBE_PATH.exists():
+            AudioSegment.ffprobe = str(FFPROBE_PATH)
+        logger.info(f"Configured FFmpeg path: {FFMPEG_PATH}")
+        return True
+
+    logger.warning("FFmpeg not found, some features may not work")
+    return False
 
 
 class OpenVoiceWorker(BaseWorker):
@@ -82,6 +112,9 @@ class OpenVoiceWorker(BaseWorker):
         """同步加载模型"""
         import torch
 
+        # 配置 FFmpeg (在导入 OpenVoice 之前)
+        _configure_ffmpeg()
+
         # 确定模型路径
         if self.checkpoint_path:
             ckpt_base = Path(self.checkpoint_path)
@@ -107,13 +140,21 @@ class OpenVoiceWorker(BaseWorker):
         self._tone_color_converter.load_ckpt(str(ckpt_converter / "checkpoint.pth"))
 
         # 提取源说话人嵌入
+        # 优先从 .pth 文件加载（如果存在），否则从 .wav 提取
+        source_se_pth = ckpt_base / "base_speakers" / "ses" / "zh.pth"
         source_audio = ckpt_base / "base_speakers" / "ses" / "zh.wav"
-        if source_audio.exists():
+
+        if source_se_pth.exists():
+            # 直接加载预提取的 speaker embedding
+            self._source_se = torch.load(str(source_se_pth), map_location=self.device)
+            logger.info(f"Loaded source speaker embedding from {source_se_pth}")
+        elif source_audio.exists():
             self._source_se = se_extractor.get_se(
                 str(source_audio),
                 self._tone_color_converter,
                 vad=False,
             )[0]
+            logger.info(f"Extracted source speaker embedding from {source_audio}")
 
     async def unload_model(self) -> bool:
         """卸载模型"""

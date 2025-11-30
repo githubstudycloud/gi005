@@ -84,6 +84,12 @@ class XTTSWorker(BaseWorker):
         from TTS.tts.configs.xtts_config import XttsConfig
         from TTS.tts.models.xtts import Xtts
 
+        # PyTorch 2.6+ 安全加载策略：允许 TTS 相关类
+        try:
+            torch.serialization.add_safe_globals([XttsConfig])
+        except AttributeError:
+            pass  # 旧版本 PyTorch 不需要此设置
+
         # 设置环境变量
         os.environ["COQUI_TOS_AGREED"] = "1"
 

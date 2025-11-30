@@ -1,6 +1,6 @@
 # ============================================================
 # Voice Clone TTS .gitignore
-# v3.2 微服务架构
+# v3.4.0 微服务架构 - 开源发布版
 # ============================================================
 
 # Windows special files
@@ -59,7 +59,10 @@ env/
 .env/
 gpt-sovits-venv/
 
-# PyTorch / ML models (large files) - use split archives instead
+# ============================================================
+# PyTorch / ML models (large files)
+# 注意: 分卷包文件 (.pkg.part_*) 需要被跟踪！
+# ============================================================
 *.pt
 *.pth
 *.bin
@@ -69,12 +72,15 @@ gpt-sovits-venv/
 # ============================================================
 # External Git repositories
 # ============================================================
-# These should be installed separately, not tracked in this repo
+# 外部仓库应单独安装，不跟踪在本仓库中
 OpenVoice/
 GPT-SoVITS/
 CosyVoice/
 fish-speech/
-packages/repos/*/
+
+# packages/repos 中的外部仓库（需要用户自行克隆）
+packages/repos/*
+!packages/repos/README.md
 
 # ============================================================
 # Large binary files
@@ -86,22 +92,15 @@ python-*.exe
 vs_buildtools.exe
 
 # ============================================================
-# Model directories
+# Packages - 解压后的目录（从分卷包恢复）
 # ============================================================
-# Use packages/models/*/extracted/ for restored models
-checkpoints_v2/
-whisper_models/
-openvoice_models/
-tts_model/xtts_v2/
-
-# Packages extracted directories (restored from split archives)
 packages/*/extracted/
 packages/*/*/extracted/
 
 # ============================================================
 # Voice and audio files
 # ============================================================
-voices/
+voice-clone-tts/voices/
 output/
 *.wav
 *.mp3
@@ -125,14 +124,11 @@ htmlcov/
 # Old/archived files
 # ============================================================
 old/
+docs/archive/
+reviews/
 
 # Old tar split files (use .pkg.part_* instead)
 *.tar.part_*
-
-# Additional model/package directories that shouldn't be tracked
-dependencies/
-gsv-v4-pretrained/
-v2Pro/
 
 # ============================================================
 # Temporary files
@@ -142,3 +138,12 @@ v2Pro/
 *.7z
 temp/
 tmp/
+
+# ============================================================
+# 重要: 以下文件必须被 Git 跟踪！
+# ============================================================
+# 分卷包文件 (.pkg.part_*) - 不要添加到 gitignore
+# packages/models/xtts_v2/*.pkg.part_*
+# packages/models/whisper/*.pkg.part_*
+# packages/models/openvoice/*.pkg.part_*
+# packages/tools/*.pkg.part_*
