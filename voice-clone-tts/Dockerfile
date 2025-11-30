@@ -59,8 +59,8 @@ COPY . /app/voice-clone-tts
 # 设置工作目录
 WORKDIR /app/voice-clone-tts
 
-# 安装项目
-RUN pip install -e .
+# 安装项目 (使用标准安装而非 editable 模式，更安全)
+RUN pip install .
 
 # 创建非 root 用户 (安全最佳实践)
 RUN groupadd -r appuser && useradd -r -g appuser appuser

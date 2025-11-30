@@ -44,6 +44,7 @@ class AnnouncementType(str, Enum):
 
 class NodeInfo(BaseModel):
     """节点信息"""
+    # 使用 UUID 前 8 位作为短 ID (约 40 亿种可能，对于节点管理足够)
     node_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
     engine_type: EngineType
     host: str
@@ -179,6 +180,7 @@ class BatchSynthesizeResponse(BaseModel):
 
 class Announcement(BaseModel):
     """系统公告"""
+    # 使用 UUID 前 8 位作为短 ID (约 40 亿种可能，对于公告管理足够)
     id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
     type: AnnouncementType = AnnouncementType.INFO
     title: str

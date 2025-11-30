@@ -1,12 +1,18 @@
 # ============================================================
 # Voice Clone TTS Docker Compose 配置
-# v3.1 微服务架构
+# v3.2 微服务架构
 # ============================================================
 #
 # 使用方法:
 #   启动服务:  docker-compose up -d
 #   查看日志:  docker-compose logs -f
 #   停止服务:  docker-compose down
+#
+# 模型挂载说明:
+#   默认挂载路径为 ./models/，请在启动前准备好模型文件：
+#   - ./models/xtts/      -> XTTS-v2 模型
+#   - ./models/openvoice/ -> OpenVoice 模型
+#   或通过环境变量指定: XTTS_MODEL_PATH, OPENVOICE_MODEL_PATH
 #
 # 注意: 首次启动需要下载模型，可能需要较长时间
 # ============================================================
@@ -75,8 +81,8 @@ services:
       - ./voices:/app/voices
       # 日志目录
       - ./logs:/app/logs
-      # 模型目录（挂载本地模型避免重复下载）
-      - ../packages/models/xtts_v2/extracted:/app/models/xtts:ro
+      # 模型目录（使用当前目录下的 models/，避免跨上下文路径问题）
+      - ${XTTS_MODEL_PATH:-./models/xtts}:/app/models/xtts:ro
 
     environment:
       - DEVICE=cuda
@@ -121,7 +127,7 @@ services:
     volumes:
       - ./voices:/app/voices
       - ./logs:/app/logs
-      - ../packages/models/openvoice/extracted:/app/models/openvoice:ro
+      - ${OPENVOICE_MODEL_PATH:-./models/openvoice}:/app/models/openvoice:ro
 
     environment:
       - DEVICE=cuda
@@ -175,7 +181,7 @@ services:
 
     command: ["python", "-m", "src.main", "worker", "--engine", "gpt-sovits", "--port", "8003", "--gateway", "http://gateway:8080"]
 
-  # CPU 版本 (无 GPU)
+  # CPU 版本 (无 GPU) - 使用独立端口 8004 避免与 GPU 版本冲突
   xtts-worker-cpu:
     build:
       context: .
@@ -189,19 +195,19 @@ services:
       - cpu  # 使用 --profile cpu 启动
 
     ports:
-      - "8001:8001"
+      - "8004:8004"  # 使用 8004 端口，避免与 xtts-worker (8001) 冲突
 
     volumes:
       - ./voices:/app/voices
       - ./logs:/app/logs
-      - ../packages/models/xtts_v2/extracted:/app/models/xtts:ro
+      - ${XTTS_MODEL_PATH:-./models/xtts}:/app/models/xtts:ro
 
     environment:
       - DEVICE=cpu
       - LOG_LEVEL=INFO
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -210,7 +216,7 @@ services:
     networks:
       - voice-clone-net
 
-    command: ["python", "-m", "src.main", "worker", "--engine", "xtts", "--port", "8001", "--gateway", "http://gateway:8080", "--device", "cpu", "--auto-load"]
+    command: ["python", "-m", "src.main", "worker", "--engine", "xtts", "--port", "8004", "--gateway", "http://gateway:8080", "--device", "cpu", "--auto-load"]
 
 networks:
   voice-clone-net:
