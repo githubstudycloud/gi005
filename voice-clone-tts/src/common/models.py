@@ -212,6 +212,9 @@ class SystemConfig(BaseModel):
     heartbeat_interval: int = 10  # 秒
     dead_threshold: int = 30  # 超时阈值
 
+    # WebSocket 配置
+    ws_broadcast_interval: float = 2.0  # 状态广播间隔（秒）
+
 
 class SystemStatus(BaseModel):
     """系统状态概览"""
@@ -233,7 +236,7 @@ class SystemStatus(BaseModel):
 class HealthCheck(BaseModel):
     """健康检查结果"""
     status: str = "healthy"  # healthy, degraded, unhealthy
-    version: str = "3.0.0"
+    version: str = "3.2.2"
     uptime_seconds: float = 0.0
     timestamp: float = Field(default_factory=time.time)
 

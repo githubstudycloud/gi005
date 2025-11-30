@@ -92,7 +92,7 @@ class GatewayApp:
         self.ws_broadcaster = StatusBroadcaster(
             manager=self.ws_manager,
             registry=self.registry,
-            interval=2.0,
+            interval=self.config.ws_broadcast_interval,
         )
 
         # 公告列表
@@ -119,7 +119,7 @@ class GatewayApp:
 
         app = FastAPI(
             title="Voice Clone TTS Gateway",
-            version="3.0.0",
+            version="3.2.2",
             description="企业级语音克隆 TTS 服务网关",
             lifespan=lifespan,
         )

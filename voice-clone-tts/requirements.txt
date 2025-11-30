@@ -1,8 +1,8 @@
 # Voice Clone TTS - 依赖列表
-# v3.1 微服务架构
+# v3.2 微服务架构
 
 # ===================== 核心框架 =====================
-fastapi>=0.104.0
+fastapi>=0.104.0        # 统一版本：与 pyproject.toml 保持一致
 uvicorn[standard]>=0.24.0
 pydantic>=2.0.0
 httpx>=0.25.0
@@ -24,8 +24,8 @@ TTS>=0.22.0
 edge-tts>=6.1.0
 
 # ===================== 音频处理 =====================
-numpy>=1.21.0
-scipy>=1.7.0
+numpy>=1.24.0           # 统一版本：与 pyproject.toml 保持一致
+scipy>=1.10.0           # 统一版本：与 pyproject.toml 保持一致
 librosa>=0.10.0
 soundfile>=0.12.0
 
