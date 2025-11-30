@@ -1,6 +1,6 @@
 # ============================================================
 # Voice Clone TTS Docker 镜像
-# 支持 XTTS-v2 和 OpenVoice 引擎
+# v3.1 微服务架构
 # ============================================================
 
 # 基础镜像：NVIDIA CUDA 11.8 + Python 3.10
@@ -66,19 +66,19 @@ RUN pip install -e .
 RUN mkdir -p /app/voices /app/outputs /app/logs
 
 # 设置环境变量
-ENV VOICE_ENGINE=xtts
-ENV VOICE_HOST=0.0.0.0
-ENV VOICE_PORT=8000
+ENV GATEWAY_HOST=0.0.0.0
+ENV GATEWAY_PORT=8080
 ENV VOICES_DIR=/app/voices
 ENV OUTPUT_DIR=/app/outputs
 ENV LOG_DIR=/app/logs
+ENV DEVICE=cuda
 
-# 暴露端口
-EXPOSE 8000
+# 暴露端口 (网关 + 工作节点)
+EXPOSE 8080 8001 8002 8003
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:8080/health || exit 1
 
-# 启动命令
-CMD ["python", "production/main.py", "serve", "--engine", "xtts", "--host", "0.0.0.0", "--port", "8000"]
+# 默认启动网关
+CMD ["python", "-m", "src.main", "gateway", "--port", "8080"]

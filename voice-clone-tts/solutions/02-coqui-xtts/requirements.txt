@@ -1,5 +1,0 @@
-# Coqui TTS (XTTS-v2) 依赖
-TTS>=0.22.0
-torch>=2.0.0
-torchaudio>=2.0.0
-numpy>=1.21.0

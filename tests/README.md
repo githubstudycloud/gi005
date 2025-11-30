@@ -11,8 +11,8 @@ tests/
 ├── test_xtts.py         # Tests for XTTS engine
 ├── test_server.py       # Tests for HTTP server
 ├── test_client.py       # Tests for HTTP client
-├── test_v3_gateway.py   # Tests for v3 Gateway (microservices)
-└── test_v3_worker.py    # Tests for v3 Worker (microservices)
+├── test_gateway.py   # Tests for Gateway (microservices)
+└── test_worker.py    # Tests for Worker (microservices)
 ```
 
 ## Running Tests

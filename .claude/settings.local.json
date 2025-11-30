@@ -1,12 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit -m \"$(cat <<''EOF''\n添加模型分卷包\n\n模型文件：\n- tts_model/xtts_v2_full.pkg.part_* (XTTS-v2, 21个分卷, 约2GB)\n- offline_package/checkpoints_v2.pkg.part_* (OpenVoice, 2个分卷, 约126MB)\n- offline_package/whisper_models.pkg.part_* (Whisper, 16个分卷, 约1.5GB)\n\n使用 .pkg.part_* 后缀避免被 .gitignore 忽略\n\n还原方法见各目录 README.md\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git tag:*)",
-      "Bash(git push:*)",
-      "Bash(git remote set-url:*)",
-      "Bash(git update-ref:*)",
-      "Bash(git rm:*)"
+      "Bash(E:/claudecode/github004/venv/Scripts/python.exe -c \"import ast; ast.parse(open(''voice-clone-tts/src/workers/base_worker.py'').read()); print(''base_worker.py: Syntax OK'')\")"
     ],
     "deny": [],
     "ask": []

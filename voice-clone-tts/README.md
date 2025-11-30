@@ -1,205 +1,179 @@
-# 音色克隆与TTS语音生成方案
+# Voice Clone TTS
 
-本项目探究使用 Python 从音频中提取音色特征，并结合 TTS 模型生成语音的技术方案。
+企业级语音克隆微服务系统，支持多引擎（XTTS-v2、OpenVoice、GPT-SoVITS）。
 
-## 📋 项目结构
+## 特性
+
+- **微服务架构** - 网关 + 工作节点，支持水平扩展
+- **多引擎支持** - XTTS-v2、OpenVoice、GPT-SoVITS
+- **服务注册发现** - 工作节点自动注册到网关
+- **负载均衡** - 请求自动分发到可用节点
+- **实时监控** - WebSocket 推送节点状态
+- **优雅关闭** - 信号处理确保资源正确释放
+
+## 快速开始
+
+### 单机模式
+
+```bash
+cd voice-clone-tts
+python -m src.main standalone --engine xtts --port 8080
+```
+
+访问:
+- 状态页面: http://localhost:8080/status
+- 管理页面: http://localhost:8080/admin
+- API 测试: http://localhost:8080/playground
+
+### 分布式部署
+
+```bash
+# 终端 1: 启动网关
+python -m src.main gateway --port 8080
+
+# 终端 2: 启动 XTTS 工作节点
+python -m src.main worker --engine xtts --port 8001 --gateway http://localhost:8080 --auto-load
+
+# 终端 3: 启动 OpenVoice 工作节点 (可选)
+python -m src.main worker --engine openvoice --port 8002 --gateway http://localhost:8080
+```
+
+## 项目结构
 
 ```
 voice-clone-tts/
-├── README.md                     # 本文档（方案总结）
-├── requirements.txt              # 基础依赖
-├── examples/                     # 旧版示例代码（已废弃）
-└── solutions/                    # 各方案详细实现
-    ├── 01-openvoice/            # OpenVoice 音色克隆
-    ├── 02-coqui-xtts/           # Coqui XTTS-v2
-    ├── 03-gpt-sovits/           # GPT-SoVITS
-    ├── 04-cosyvoice/            # CosyVoice (阿里)
-    └── 05-fish-speech/          # Fish-Speech
+├── src/                      # 源代码
+│   ├── main.py               # 入口文件
+│   ├── common/               # 公共模块
+│   │   ├── models.py         # 数据模型
+│   │   ├── paths.py          # 路径配置
+│   │   ├── exceptions.py     # 异常定义
+│   │   └── logging.py        # 日志系统
+│   ├── gateway/              # 网关模块
+│   │   ├── app.py            # FastAPI 应用
+│   │   ├── registry.py       # 服务注册中心
+│   │   ├── limiter.py        # 限流器
+│   │   └── websocket.py      # WebSocket
+│   └── workers/              # 工作节点
+│       ├── base_worker.py    # 基类
+│       ├── xtts_worker.py    # XTTS-v2
+│       ├── openvoice_worker.py
+│       └── gpt_sovits_worker.py
+├── voices/                   # 音色存储
+├── config.yaml               # 配置文件
+├── requirements.txt          # 依赖
+├── Dockerfile                # Docker 镜像
+└── docker-compose.yml        # Docker Compose
 ```
 
----
+## API 接口
 
-## 🎯 方案总结对比
+### 系统接口
 
-| 方案 | 音色提取 | 中文质量 | 参考音频需求 | 安装难度 | 推荐场景 |
-|------|---------|---------|-------------|---------|---------|
-| **OpenVoice** | ✅ 支持 | ⭐⭐⭐⭐ | 3-10秒 | ⭐⭐⭐ | 音色转换 |
-| **Coqui XTTS** | ✅ 支持 | ⭐⭐⭐ | 6秒 | ⭐⭐⭐⭐⭐ | 多语言克隆 |
-| **GPT-SoVITS** | ✅ 支持 | ⭐⭐⭐⭐⭐ | 5秒/1分钟微调 | ⭐⭐ | **中文首选** |
-| **CosyVoice** | ✅ 支持 | ⭐⭐⭐⭐⭐ | 3-10秒 | ⭐⭐ | 跨语言/指令控制 |
-| **Fish-Speech** | ✅ 支持 | ⭐⭐⭐⭐ | 10-30秒 | ⭐⭐⭐ | 低显存/快速推理 |
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/health` | GET | 健康检查 |
+| `/api/status` | GET | 系统状态 |
+| `/api/nodes` | GET | 节点列表 |
+| `/ws` | WebSocket | 实时状态 |
 
-### 🏆 推荐选择
+### 业务接口
 
-1. **中文最佳**: GPT-SoVITS 或 CosyVoice
-2. **最简单易用**: Coqui XTTS-v2（一行代码）
-3. **低显存**: Fish-Speech（仅需 4GB）
-4. **音色转换**: OpenVoice（分离音色和内容）
-5. **跨语言**: CosyVoice（中文音频说英文）
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/synthesize` | POST | 语音合成 |
+| `/api/extract_voice` | POST | 提取音色 |
+| `/api/voices` | GET | 音色列表 |
 
----
+### 示例
 
-## 📦 各方案简介
-
-### 方案一：OpenVoice
-
-**特点**：音色与内容分离，可将任意语音转换为目标音色
-
-```python
-from openvoice import se_extractor
-from openvoice.api import ToneColorConverter
-
+```bash
 # 提取音色
-target_se, _ = se_extractor.get_se(reference_audio, converter, vad=True)
+curl -X POST http://localhost:8080/api/extract_voice \
+  -F "audio=@reference.wav" \
+  -F "voice_name=my_voice"
 
-# 转换音色
-converter.convert(source_audio, src_se, target_se, output_path)
+# 语音合成
+curl -X POST http://localhost:8080/api/synthesize \
+  -H "Content-Type: application/json" \
+  -d '{"text": "你好", "voice_id": "my_voice", "language": "zh"}' \
+  --output output.wav
 ```
 
-**详细文档**: [solutions/01-openvoice/](solutions/01-openvoice/)
+## 模型配置
 
----
-
-### 方案二：Coqui XTTS-v2
-
-**特点**：一行代码完成克隆，支持 17 种语言
-
-```python
-from TTS.api import TTS
-
-tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2")
-tts.tts_to_file(text="你好", file_path="out.wav", speaker_wav="ref.wav", language="zh-cn")
-```
-
-**详细文档**: [solutions/02-coqui-xtts/](solutions/02-coqui-xtts/)
-
----
-
-### 方案三：GPT-SoVITS
-
-**特点**：少样本学习，1分钟数据微调达到极佳效果
-
-```python
-# 启动 API 服务
-# python api_v2.py -a 127.0.0.1 -p 9880
-
-import requests
-response = requests.post("http://127.0.0.1:9880/tts", json={
-    "text": "你好",
-    "ref_audio_path": "reference.wav",
-    "text_lang": "zh"
-})
-```
-
-**详细文档**: [solutions/03-gpt-sovits/](solutions/03-gpt-sovits/)
-
----
-
-### 方案四：CosyVoice
-
-**特点**：阿里开源，3秒克隆，支持情感/指令控制
-
-```python
-from cosyvoice.cli.cosyvoice import CosyVoice
-
-model = CosyVoice("pretrained_models/CosyVoice-300M")
-
-# 零样本克隆
-output = model.inference_zero_shot(text, prompt_text, prompt_audio)
-
-# 跨语言（中文音频说英文）
-output = model.inference_cross_lingual(english_text, chinese_audio)
-
-# 指令控制
-output = model.inference_instruct(text, speaker, "用开心的语气")
-```
-
-**详细文档**: [solutions/04-cosyvoice/](solutions/04-cosyvoice/)
-
----
-
-### 方案五：Fish-Speech
-
-**特点**：低显存(4GB)，快速推理，SOTA 质量
-
-```python
-# 本地推理或 API 调用
-from fish_speech.inference import inference
-
-# 或使用 Fish Audio API
-api = FishSpeechAPI(api_key="your-key")
-api.clone(text, reference_audio, output_path)
-```
-
-**详细文档**: [solutions/05-fish-speech/](solutions/05-fish-speech/)
-
----
-
-## ⚠️ 关于 ChatTTS 的说明
-
-**ChatTTS 本身不支持从音频提取音色**。
-
-- ChatTTS 使用 768 维的 speaker embedding
-- SpeechBrain 等工具提取的是 192 维 embedding
-- 两者维度不兼容，无法直接使用
-
-**ChatTTS 的正确用法**：
-1. 使用 `sample_random_speaker()` 随机采样音色
-2. 使用 [ChatTTS_Speaker](https://github.com/6drf21e/ChatTTS_Speaker) 预训练音色库
-3. 保存满意的音色 `.pt` 文件复用
-
-如需真正的音色克隆，请使用上述 5 个方案。
-
----
-
-## 🚀 快速开始
-
-### 环境要求
-
-- Python 3.9+
-- PyTorch 2.0+
-- CUDA 11.8+（GPU 加速）
-- 显存需求：4GB (Fish-Speech) ~ 8GB (其他)
-
-### 推荐：使用 Coqui XTTS（最简单）
+模型文件存放在 `packages/models/` 目录:
 
 ```bash
-# 安装
-pip install TTS
+# 还原 XTTS-v2 模型
+cd packages/models/xtts_v2
+cat xtts_v2_full.pkg.part_* > xtts_v2.tar
+tar -xvf xtts_v2.tar -C extracted/
 
-# 克隆语音
-python -c "
-from TTS.api import TTS
-tts = TTS('tts_models/multilingual/multi-dataset/xtts_v2')
-tts.tts_to_file('你好世界', 'output.wav', speaker_wav='reference.wav', language='zh-cn')
-"
+# 还原 OpenVoice 模型
+cd packages/models/openvoice
+cat checkpoints_v2.pkg.part_* > checkpoints.tar
+tar -xvf checkpoints.tar -C extracted/
 ```
 
-### 推荐：使用 GPT-SoVITS（中文最佳）
+## Docker 部署
 
 ```bash
-# 安装
-git clone https://github.com/RVC-Boss/GPT-SoVITS.git
-cd GPT-SoVITS && pip install -r requirements.txt
+# 启动网关 + XTTS 工作节点
+docker-compose up -d gateway xtts-worker
 
-# 启动 WebUI
-python webui.py
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
 ```
 
----
+## 引擎对比
 
-## 📚 参考资源
+| 引擎 | 音色提取 | 中文质量 | 参考音频需求 | 推荐场景 |
+|------|---------|---------|-------------|---------|
+| **XTTS-v2** | ✅ 支持 | ⭐⭐⭐ | 6秒 | 多语言克隆 |
+| **OpenVoice** | ✅ 支持 | ⭐⭐⭐⭐ | 3-10秒 | 音色转换 |
+| **GPT-SoVITS** | ✅ 支持 | ⭐⭐⭐⭐⭐ | 5秒 | 中文首选 |
 
-| 项目 | GitHub | 论文/文档 |
-|------|--------|----------|
-| OpenVoice | [myshell-ai/OpenVoice](https://github.com/myshell-ai/OpenVoice) | [arXiv](https://arxiv.org/abs/2312.01479) |
-| Coqui TTS | [coqui-ai/TTS](https://github.com/coqui-ai/TTS) | [HuggingFace](https://huggingface.co/coqui/XTTS-v2) |
-| GPT-SoVITS | [RVC-Boss/GPT-SoVITS](https://github.com/RVC-Boss/GPT-SoVITS) | [Wiki](https://github.com/RVC-Boss/GPT-SoVITS/wiki) |
-| CosyVoice | [FunAudioLLM/CosyVoice](https://github.com/FunAudioLLM/CosyVoice) | [arXiv](https://arxiv.org/abs/2407.05407) |
-| Fish-Speech | [fishaudio/fish-speech](https://github.com/fishaudio/fish-speech) | [arXiv](https://arxiv.org/abs/2411.01156) |
+## 环境变量
 
----
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `GATEWAY_PORT` | 网关端口 | 8080 |
+| `DEVICE` | 计算设备 | cuda |
+| `LOG_LEVEL` | 日志级别 | INFO |
+| `GPT_SOVITS_API_URL` | GPT-SoVITS API | http://127.0.0.1:9880 |
 
-## License
+## 版本历史
 
-本项目代码采用 MIT 许可证。各方案请遵循其原始许可。
+### v3.1 (2025-11-30)
+- 添加优雅关闭机制
+- 改进信号处理
+- 更新文档和配置
+
+### v3.0 (2025-11-29)
+- 微服务架构重构
+- 服务注册与发现
+- WebSocket 实时状态
+- 多层限流系统
+
+## 文档
+
+详细文档请查看 [docs/](../docs/) 目录:
+
+| 文档 | 说明 |
+|------|------|
+| [00-索引](../docs/00-索引.md) | 文档导航 |
+| [01-快速开始](../docs/01-快速开始.md) | 5分钟上手 |
+| [02-安装部署](../docs/02-安装部署.md) | 详细安装 |
+| [03-使用指南](../docs/03-使用指南.md) | CLI/API使用 |
+| [04-架构设计](../docs/04-架构设计.md) | 系统架构 |
+| [05-API参考](../docs/05-API参考.md) | 接口详情 |
+| [06-常见问题](../docs/06-常见问题.md) | FAQ |
+| [07-更新日志](../docs/07-更新日志.md) | 版本历史 |
+
+## 许可证
+
+MIT License

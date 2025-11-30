@@ -1,5 +1,6 @@
 # ============================================================
 # Voice Clone TTS Docker Compose 配置
+# v3.1 微服务架构
 # ============================================================
 #
 # 使用方法:
@@ -13,14 +14,49 @@
 version: '3.8'
 
 services:
-  # XTTS-v2 引擎服务
-  voice-clone-xtts:
+  # 网关服务
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: voice-clone-tts:latest
+    container_name: voice-clone-gateway
+    restart: unless-stopped
+
+    ports:
+      - "8080:8080"
+
+    volumes:
+      - ./voices:/app/voices
+      - ./logs:/app/logs
+
+    environment:
+      - GATEWAY_HOST=0.0.0.0
+      - GATEWAY_PORT=8080
+      - LOG_LEVEL=INFO
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    networks:
+      - voice-clone-net
+
+    command: ["python", "-m", "src.main", "gateway", "--port", "8080"]
+
+  # XTTS-v2 工作节点
+  xtts-worker:
     build:
       context: .
       dockerfile: Dockerfile
     image: voice-clone-tts:latest
     container_name: voice-clone-xtts
     restart: unless-stopped
+    depends_on:
+      - gateway
 
     # GPU 支持 (需要 nvidia-docker)
     deploy:
@@ -32,31 +68,22 @@ services:
               capabilities: [gpu]
 
     ports:
-      - "8000:8000"
+      - "8001:8001"
 
     volumes:
       # 音色存储（持久化）
       - ./voices:/app/voices
-      # 输出目录（持久化）
-      - ./outputs:/app/outputs
       # 日志目录
       - ./logs:/app/logs
       # 模型目录（挂载本地模型避免重复下载）
-      - ../tts_model:/app/tts_model:ro
-      - ../checkpoints_v2:/app/checkpoints_v2:ro
+      - ../packages/models/xtts_v2/extracted:/app/models/xtts:ro
 
     environment:
-      - VOICE_ENGINE=xtts
-      - VOICE_HOST=0.0.0.0
-      - VOICE_PORT=8000
-      - VOICES_DIR=/app/voices
-      - OUTPUT_DIR=/app/outputs
-      - MODEL_PATH=/app/tts_model/xtts_v2
       - DEVICE=cuda
       - LOG_LEVEL=INFO
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -65,14 +92,18 @@ services:
     networks:
       - voice-clone-net
 
-  # OpenVoice 引擎服务 (可选)
-  voice-clone-openvoice:
+    command: ["python", "-m", "src.main", "worker", "--engine", "xtts", "--port", "8001", "--gateway", "http://gateway:8080", "--auto-load"]
+
+  # OpenVoice 工作节点 (可选)
+  openvoice-worker:
     build:
       context: .
       dockerfile: Dockerfile
     image: voice-clone-tts:latest
     container_name: voice-clone-openvoice
     restart: unless-stopped
+    depends_on:
+      - gateway
     profiles:
       - openvoice  # 使用 --profile openvoice 启动
 
@@ -85,27 +116,19 @@ services:
               capabilities: [gpu]
 
     ports:
-      - "8001:8000"
+      - "8002:8002"
 
     volumes:
       - ./voices:/app/voices
-      - ./outputs:/app/outputs
       - ./logs:/app/logs
-      - ../checkpoints_v2:/app/checkpoints_v2:ro
-      - ../OpenVoice:/app/OpenVoice:ro
+      - ../packages/models/openvoice/extracted:/app/models/openvoice:ro
 
     environment:
-      - VOICE_ENGINE=openvoice
-      - VOICE_HOST=0.0.0.0
-      - VOICE_PORT=8000
-      - VOICES_DIR=/app/voices
-      - OUTPUT_DIR=/app/outputs
-      - MODEL_PATH=/app/checkpoints_v2/converter
       - DEVICE=cuda
       - LOG_LEVEL=INFO
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -114,35 +137,71 @@ services:
     networks:
       - voice-clone-net
 
+    command: ["python", "-m", "src.main", "worker", "--engine", "openvoice", "--port", "8002", "--gateway", "http://gateway:8080", "--auto-load"]
+
+  # GPT-SoVITS 工作节点 (可选，需要外部 API 服务)
+  gpt-sovits-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: voice-clone-tts:latest
+    container_name: voice-clone-gpt-sovits
+    restart: unless-stopped
+    depends_on:
+      - gateway
+    profiles:
+      - gpt-sovits  # 使用 --profile gpt-sovits 启动
+
+    ports:
+      - "8003:8003"
+
+    volumes:
+      - ./voices:/app/voices
+      - ./logs:/app/logs
+
+    environment:
+      - GPT_SOVITS_API_URL=http://host.docker.internal:9880
+      - LOG_LEVEL=INFO
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    networks:
+      - voice-clone-net
+
+    command: ["python", "-m", "src.main", "worker", "--engine", "gpt-sovits", "--port", "8003", "--gateway", "http://gateway:8080"]
+
   # CPU 版本 (无 GPU)
-  voice-clone-cpu:
+  xtts-worker-cpu:
     build:
       context: .
       dockerfile: Dockerfile
     image: voice-clone-tts:latest
     container_name: voice-clone-cpu
     restart: unless-stopped
+    depends_on:
+      - gateway
     profiles:
       - cpu  # 使用 --profile cpu 启动
 
     ports:
-      - "8002:8000"
+      - "8001:8001"
 
     volumes:
       - ./voices:/app/voices
-      - ./outputs:/app/outputs
       - ./logs:/app/logs
-      - ../tts_model:/app/tts_model:ro
+      - ../packages/models/xtts_v2/extracted:/app/models/xtts:ro
 
     environment:
-      - VOICE_ENGINE=xtts
-      - VOICE_HOST=0.0.0.0
-      - VOICE_PORT=8000
       - DEVICE=cpu
       - LOG_LEVEL=INFO
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -151,6 +210,8 @@ services:
     networks:
       - voice-clone-net
 
+    command: ["python", "-m", "src.main", "worker", "--engine", "xtts", "--port", "8001", "--gateway", "http://gateway:8080", "--device", "cpu", "--auto-load"]
+
 networks:
   voice-clone-net:
     driver: bridge
@@ -158,20 +219,20 @@ networks:
 # ============================================================
 # 使用示例:
 #
-# 1. 启动 XTTS 服务 (默认):
-#    docker-compose up -d
+# 1. 启动网关 + XTTS 工作节点 (默认):
+#    docker-compose up -d gateway xtts-worker
 #
-# 2. 启动 OpenVoice 服务:
-#    docker-compose --profile openvoice up -d voice-clone-openvoice
+# 2. 启动 OpenVoice 工作节点:
+#    docker-compose --profile openvoice up -d openvoice-worker
 #
 # 3. 启动 CPU 版本 (无 GPU):
-#    docker-compose --profile cpu up -d voice-clone-cpu
+#    docker-compose --profile cpu up -d gateway xtts-worker-cpu
 #
-# 4. 同时启动多个服务:
-#    docker-compose --profile openvoice up -d
+# 4. 启动所有服务:
+#    docker-compose --profile openvoice --profile gpt-sovits up -d
 #
 # 5. 查看日志:
-#    docker-compose logs -f voice-clone-xtts
+#    docker-compose logs -f gateway xtts-worker
 #
 # 6. 停止所有服务:
 #    docker-compose down

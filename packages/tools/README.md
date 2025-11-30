@@ -1,17 +1,53 @@
 # 工具软件
 
-本目录包含项目运行所需的外部工具软件。
+本目录包含项目运行所需的外部工具软件的分卷包。
 
 ## 目录结构
 
 ```
 tools/
-├── ffmpeg/      # 音视频处理工具
-│   ├── ffmpeg.exe
-│   ├── ffplay.exe
-│   └── ffprobe.exe
-└── python/      # Python 安装程序
-    └── python-3.10.11-amd64.exe
+├── extracted/                 # 解压后的可执行文件 (已在 .gitignore)
+│   ├── ffmpeg.exe            # FFmpeg 主程序
+│   ├── ffplay.exe            # FFmpeg 播放器
+│   └── ffprobe.exe           # FFmpeg 探测器
+├── ffmpeg.pkg.part_aa        # FFmpeg 分卷包 (100MB)
+├── ffmpeg.pkg.part_ab        # FFmpeg 分卷包 (100MB)
+├── ffmpeg.pkg.part_ac        # FFmpeg 分卷包 (100MB)
+├── ffmpeg.pkg.part_ad        # FFmpeg 分卷包 (100MB)
+├── ffmpeg.pkg.part_ae        # FFmpeg 分卷包 (100MB)
+├── ffmpeg.pkg.part_af        # FFmpeg 分卷包 (~51MB)
+├── python.pkg.part_aa        # Python 安装程序 (~28MB)
+└── README.md                 # 本文件
+```
+
+**注意**: `extracted/` 目录中的文件已在 `.gitignore` 中，不会被提交到仓库。
+
+## 还原方法
+
+### FFmpeg (约551MB)
+
+```bash
+# 合并分卷并解压
+cd packages/tools
+cat ffmpeg.pkg.part_* > ffmpeg.tar
+tar -xvf ffmpeg.tar
+
+# 将文件复制到项目根目录或添加到 PATH
+cp ffmpeg.exe ffplay.exe ffprobe.exe ../../
+
+# 清理临时文件
+rm ffmpeg.tar
+```
+
+### Python 安装程序 (约28MB)
+
+```bash
+# 还原安装程序
+cd packages/tools
+cat python.pkg.part_* > python-3.10.11-amd64.exe
+
+# 运行安装（注意勾选 Add to PATH）
+./python-3.10.11-amd64.exe
 ```
 
 ## FFmpeg

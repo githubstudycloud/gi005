@@ -1,3 +1,8 @@
+# ============================================================
+# Voice Clone TTS .gitignore
+# v3.1 微服务架构
+# ============================================================
+
 # Dependencies
 node_modules/
 vendor/
@@ -17,7 +22,7 @@ out/
 .DS_Store
 Thumbs.db
 
-# Environment
+# Environment files
 .env
 .env.local
 .env.*.local
@@ -25,24 +30,30 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+logs/
 
 # Cache
 .cache/
 *.tmp
 
+# ============================================================
 # Python
+# ============================================================
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+*.egg-info/
+.eggs/
+*.egg
+
+# Virtual environments
 venv/
 env/
 .venv/
 .env/
-*.egg-info/
-.eggs/
-*.egg
+gpt-sovits-venv/
 
 # PyTorch / ML models (large files) - use split archives instead
 *.pt
@@ -51,46 +62,79 @@ env/
 *.onnx
 *.safetensors
 
-# External Git repositories (cloned dependencies)
+# ============================================================
+# External Git repositories
+# ============================================================
 # These should be installed separately, not tracked in this repo
 OpenVoice/
 GPT-SoVITS/
 CosyVoice/
 fish-speech/
+packages/repos/*/
 
-# Model directories (use offline_package split archives instead)
-checkpoints_v2/
-whisper_models/
-openvoice_models/
-
+# ============================================================
 # Large binary files
+# ============================================================
 ffmpeg.exe
 ffplay.exe
 ffprobe.exe
 python-*.exe
 vs_buildtools.exe
 
-# Voice outputs and extracted voices
+# ============================================================
+# Model directories
+# ============================================================
+# Use packages/models/*/extracted/ for restored models
+checkpoints_v2/
+whisper_models/
+openvoice_models/
+tts_model/xtts_v2/
+
+# Packages extracted directories (restored from split archives)
+packages/*/extracted/
+packages/*/*/extracted/
+
+# ============================================================
+# Voice and audio files
+# ============================================================
 voices/
 output/
 *.wav
 *.mp3
 *.flac
-
-# Test and temporary files
 test_audio/
 processed/
+
+# ============================================================
+# Testing
+# ============================================================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ============================================================
+# Jupyter
+# ============================================================
+.ipynb_checkpoints/
+
+# ============================================================
+# Old/archived files
+# ============================================================
+old/
 
 # Old tar split files (use .pkg.part_* instead)
 *.tar.part_*
 
-# Unpacked model directories (use archives instead)
-tts_model/xtts_v2/
+# Additional model/package directories that shouldn't be tracked
+dependencies/
+gsv-v4-pretrained/
+v2Pro/
 
-# Jupyter
-.ipynb_checkpoints/
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
+# ============================================================
+# Temporary files
+# ============================================================
+*.tar
+*.zip
+*.7z
+temp/
+tmp/
