@@ -62,8 +62,15 @@ WORKDIR /app/voice-clone-tts
 # 安装项目
 RUN pip install -e .
 
-# 创建必要的目录
-RUN mkdir -p /app/voices /app/outputs /app/logs
+# 创建非 root 用户 (安全最佳实践)
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# 创建必要的目录并设置权限
+RUN mkdir -p /app/voices /app/outputs /app/logs && \
+    chown -R appuser:appuser /app
+
+# 切换到非 root 用户
+USER appuser
 
 # 设置环境变量
 ENV GATEWAY_HOST=0.0.0.0

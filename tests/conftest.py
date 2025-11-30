@@ -129,9 +129,16 @@ def loaded_xtts_worker(xtts_worker, xtts_model_path):
 
     import asyncio
     try:
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(xtts_worker.start())
-        loop.run_until_complete(xtts_worker.activate())
-        return xtts_worker
+        # Use new_event_loop() for Python 3.10+ compatibility
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(xtts_worker.start())
+            loop.run_until_complete(xtts_worker.activate())
+            yield xtts_worker
+        finally:
+            # Cleanup: stop the worker
+            loop.run_until_complete(xtts_worker.stop())
+            loop.close()
     except Exception as e:
         pytest.skip(f"Failed to load XTTS model: {e}")

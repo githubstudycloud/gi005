@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "voice-clone-tts"
-version = "2.0.0"
-description = "统一的音色克隆 TTS 框架，支持 XTTS-v2、OpenVoice、GPT-SoVITS"
+version = "3.2.0"
+description = "企业级语音克隆微服务系统，支持 XTTS-v2、OpenVoice、GPT-SoVITS"
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.10,<3.11"
+requires-python = ">=3.10"
 authors = [
     {name = "Voice Clone Team"}
 ]
@@ -92,8 +92,7 @@ dev = [
 ]
 
 [project.scripts]
-voice-clone = "production.main:main"
-voice-clone-server = "production.server:main"
+voice-clone = "src.main:main"
 
 [project.urls]
 Homepage = "https://github.com/githubstudycloud/gi005"
@@ -102,7 +101,7 @@ Repository = "https://github.com/githubstudycloud/gi005"
 Issues = "https://github.com/githubstudycloud/gi005/issues"
 
 [tool.setuptools]
-packages = ["production", "production.common", "production.xtts", "production.openvoice", "production.gpt-sovits"]
+packages = ["src", "src.common", "src.gateway", "src.workers"]
 package-dir = {"" = "."}
 
 [tool.setuptools.package-data]

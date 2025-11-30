@@ -21,12 +21,13 @@ class TestEngineType:
         assert EngineType.GPT_SOVITS.value == "gpt-sovits"
 
     def test_engine_string_comparison(self):
-        """测试引擎字符串比较"""
+        """测试引擎字符串比较（使用 .value 显式比较）"""
         from src.common.models import EngineType
 
-        assert EngineType.XTTS == "xtts"
-        assert EngineType.OPENVOICE == "openvoice"
-        assert EngineType.GPT_SOVITS == "gpt-sovits"
+        # 使用 .value 进行显式比较（更安全的做法）
+        assert EngineType.XTTS.value == "xtts"
+        assert EngineType.OPENVOICE.value == "openvoice"
+        assert EngineType.GPT_SOVITS.value == "gpt-sovits"
 
 
 class TestWorkerStatus:

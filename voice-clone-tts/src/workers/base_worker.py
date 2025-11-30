@@ -353,8 +353,11 @@ class BaseWorker(ABC):
             gpu_percent = util.gpu
             gpu_mem_percent = (mem_info.used / mem_info.total) * 100
             pynvml.nvmlShutdown()
-        except Exception:
+        except ImportError:
+            # pynvml not installed, GPU metrics unavailable
             pass
+        except Exception as e:
+            logger.debug(f"Failed to get GPU metrics: {e}")
 
         avg_response_time = 0.0
         if self._request_count > 0:
@@ -556,13 +559,19 @@ class BaseWorker(ABC):
             if signum == signal.SIGINT and callable(original_sigint):
                 try:
                     original_sigint(signum, frame)
-                except:
+                except (TypeError, SystemExit):
+                    # TypeError: original handler may not be callable in all cases
+                    # SystemExit: original handler may raise SystemExit
                     pass
+                except Exception as e:
+                    logger.debug(f"Error calling original SIGINT handler: {e}")
             elif signum == signal.SIGTERM and callable(original_sigterm):
                 try:
                     original_sigterm(signum, frame)
-                except:
+                except (TypeError, SystemExit):
                     pass
+                except Exception as e:
+                    logger.debug(f"Error calling original SIGTERM handler: {e}")
 
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)

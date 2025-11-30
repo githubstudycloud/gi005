@@ -271,7 +271,14 @@ class RateLimiter:
         }
 
     def cleanup_expired(self):
-        """清理过期的 IP 限流器"""
-        # 简单策略：定期清理空闲的限流器
-        # 可以在定时任务中调用
-        pass
+        """
+        清理过期的 IP 限流器
+
+        定期调用此方法可释放不活跃 IP 的内存。
+        当前实现: 清空所有 IP 限流器（适用于低流量场景）。
+        TODO: 实现基于 LRU 或最后访问时间的清理策略。
+        """
+        if len(self._ip_limiters) > 1000:
+            # 当 IP 限流器数量超过阈值时清理
+            logger.info(f"Cleaning up {len(self._ip_limiters)} IP rate limiters")
+            self._ip_limiters.clear()

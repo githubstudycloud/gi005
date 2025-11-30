@@ -255,13 +255,14 @@ async def websocket_endpoint(
                             WebSocketEvent(EventType.SYSTEM_STATUS, status),
                         )
                 except json.JSONDecodeError:
-                    pass
+                    logger.debug(f"Invalid JSON received from WebSocket client")
 
             except asyncio.TimeoutError:
                 # 发送心跳
                 try:
                     await websocket.send_text(json.dumps({"type": "ping"}))
-                except Exception:
+                except (ConnectionError, RuntimeError) as e:
+                    logger.debug(f"WebSocket heartbeat failed, closing connection: {e}")
                     break
 
     except WebSocketDisconnect:
