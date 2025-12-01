@@ -73,10 +73,11 @@ gpt-sovits-venv/
 # External Git repositories
 # ============================================================
 # 外部仓库应单独安装，不跟踪在本仓库中
-OpenVoice/
-GPT-SoVITS/
-CosyVoice/
-fish-speech/
+# 使用前导斜杠确保只匹配根目录，避免误匹配 packages/models/openvoice/
+/OpenVoice/
+/GPT-SoVITS/
+/CosyVoice/
+/fish-speech/
 
 # packages/repos 中的外部仓库（需要用户自行克隆）
 packages/repos/*
