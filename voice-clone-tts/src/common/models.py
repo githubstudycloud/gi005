@@ -241,7 +241,7 @@ class SystemStatus(BaseModel):
 class HealthCheck(BaseModel):
     """健康检查结果"""
     status: str = "healthy"  # healthy, degraded, unhealthy
-    version: str = "3.4.3"
+    version: str = "3.5.0"
     uptime_seconds: float = 0.0
     timestamp: float = Field(default_factory=time.time)
 

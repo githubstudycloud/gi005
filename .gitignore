@@ -150,4 +150,6 @@ tmp/
 # packages/models/xtts_v2/*.pkg.part_*
 # packages/models/whisper/*.pkg.part_*
 # packages/models/openvoice/*.pkg.part_*
+# packages/models/gpt_sovits/*.pkg.part_*  # GPT-SoVITS 预训练模型
 # packages/tools/*.pkg.part_*
+# packages/repos/*.pkg.part_*
