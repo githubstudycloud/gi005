@@ -80,8 +80,8 @@ gpt-sovits-venv/
 /fish-speech/
 
 # packages/repos 中的外部仓库目录（解压后的源码，不跟踪）
-packages/repos/OpenVoice/
-packages/repos/GPT-SoVITS/
+#packages/repos/OpenVoice/
+#packages/repos/GPT-SoVITS/
 # 但跟踪 README 和 .pkg.part_* 分卷源码包
 !packages/repos/README.md
 !packages/repos/*.pkg.part_*
