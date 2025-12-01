@@ -1,47 +1,63 @@
 # External Repositories
 
-本目录用于存放外部依赖仓库。这些仓库需要用户自行克隆，不包含在主仓库中。
+本目录存放外部依赖仓库的源码包。仓库已预打包为 `.pkg` 文件，无需单独克隆。
 
-## 必需仓库
+## 源码包
 
-### 1. OpenVoice (音色克隆)
+| 文件 | 大小 | 说明 |
+|------|------|------|
+| `openvoice_src.pkg` | 3.5 MB | OpenVoice 源码 (音色克隆) |
+| `gpt_sovits_src.pkg` | 2.7 MB | GPT-SoVITS 源码 (中文语音合成) |
+
+**注意**: 源码包不包含预训练模型，模型需要在首次运行时自动下载或手动配置。
+
+## 快速安装
+
+### 方法一：从源码包解压 (推荐)
 
 ```bash
 cd packages/repos
+
+# 解压 OpenVoice
+tar -xvf openvoice_src.pkg
+pip install -e OpenVoice
+
+# 解压 GPT-SoVITS
+tar -xvf gpt_sovits_src.pkg
+pip install -r GPT-SoVITS/requirements.txt
+```
+
+### 方法二：从 GitHub 克隆 (需网络)
+
+```bash
+cd packages/repos
+
+# OpenVoice
 git clone https://github.com/myshell-ai/OpenVoice.git
-cd OpenVoice
-pip install -e .
-```
+pip install -e OpenVoice
 
-### 2. GPT-SoVITS (中文语音合成)
-
-```bash
-cd packages/repos
+# GPT-SoVITS
 git clone https://github.com/RVC-Boss/GPT-SoVITS.git
-cd GPT-SoVITS
-pip install -r requirements.txt
+pip install -r GPT-SoVITS/requirements.txt
 ```
-
-**注意**: GPT-SoVITS 需要额外下载预训练模型，请参考其官方文档。
 
 ## 目录结构
 
 ```
 packages/repos/
-├── README.md          # 本文件
-├── OpenVoice/         # OpenVoice 仓库 (需克隆)
-└── GPT-SoVITS/        # GPT-SoVITS 仓库 (需克隆)
+├── README.md              # 本文件
+├── openvoice_src.pkg      # OpenVoice 源码包
+├── gpt_sovits_src.pkg     # GPT-SoVITS 源码包
+├── OpenVoice/             # 解压后的 OpenVoice 目录
+└── GPT-SoVITS/            # 解压后的 GPT-SoVITS 目录
 ```
 
-## 快速安装脚本
+## GPT-SoVITS 预训练模型
 
-```bash
-# Windows
-cd packages/repos
-git clone https://github.com/myshell-ai/OpenVoice.git
-git clone https://github.com/RVC-Boss/GPT-SoVITS.git
+GPT-SoVITS 需要额外下载预训练模型：
 
-# 安装依赖
-pip install -e OpenVoice
-pip install -r GPT-SoVITS/requirements.txt
-```
+1. 从 [Hugging Face](https://huggingface.co/lj1995/GPT-SoVITS) 下载模型
+2. 解压到 `GPT-SoVITS/GPT_SoVITS/pretrained_models/` 目录
+3. 下载 G2PW 模型到 `GPT-SoVITS/GPT_SoVITS/text/` 目录
+
+详见 GPT-SoVITS 官方文档。

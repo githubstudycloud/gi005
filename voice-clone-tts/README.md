@@ -1,4 +1,4 @@
-# Voice Clone TTS v3.4.1
+# Voice Clone TTS v3.4.2
 
 企业级语音克隆微服务系统，支持多引擎（XTTS-v2、OpenVoice、GPT-SoVITS）。
 
@@ -203,6 +203,11 @@ docker-compose down
 | `GPT_SOVITS_API_URL` | GPT-SoVITS API | http://127.0.0.1:9880 |
 
 ## 版本历史
+
+### v3.4.2 (2025-12-01)
+- 添加外部仓库源码包 (openvoice_src.pkg, gpt_sovits_src.pkg)
+- 无需克隆外部仓库，直接解压源码包即可使用
+- 更新 .gitignore 跟踪 repos 目录下的 .pkg 文件
 
 ### v3.4.1 (2025-12-01)
 - 修复 .gitignore 规则，确保 OpenVoice 模型分卷包正确跟踪
