@@ -46,6 +46,8 @@ C:\Users\<用户名>\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu22.04onW
 
 | 脚本 | 平台 | 用途 | 推荐度 |
 |------|------|------|--------|
+| `install-wsl2-to-d-drive.ps1` | Windows PowerShell | **直接安装到 D 盘**（推荐新用户） | ⭐⭐⭐⭐⭐ |
+| `wsl2-setup-cuda-pytorch.sh` | WSL2/Linux | **CUDA + PyTorch 环境配置** | ⭐⭐⭐⭐⭐ |
 | `install-wsl2.ps1` | Windows PowerShell | 自动安装 WSL2 和 Ubuntu（C 盘） | ⭐⭐⭐⭐ |
 | `wsl2-setup-with-symlink.sh` | WSL2/Linux | **软链接部署**（C/D 同盘最佳） | ⭐⭐⭐⭐⭐ |
 | `wsl2-setup.sh` | WSL2/Linux | 项目部署在 WSL2 内部（C 盘） | ⭐⭐⭐⭐ |
@@ -55,6 +57,72 @@ C:\Users\<用户名>\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu22.04onW
 ---
 
 ## 使用方法
+
+### 方式〇: 直接安装到 D 盘（⭐ 最新推荐）
+
+**适用场景**: 全新安装 WSL2，直接指定安装到 D:\wsl\ubuntu22
+
+**优势**:
+- ⭐ 一步到位，无需迁移
+- ⭐ 自定义安装路径
+- ⭐ 完整 CUDA + PyTorch 支持
+- ⭐ 不占用 C 盘空间
+
+#### 步骤 1: 在 Windows 上安装 WSL2 到 D 盘
+
+1. 以**管理员身份**打开 PowerShell
+2. 运行安装脚本：
+
+```powershell
+cd D:\data\PycharmProjects\PythonProject1\scripts
+.\install-wsl2-to-d-drive.ps1
+```
+
+3. 按照提示操作，脚本会自动：
+   - 启用 WSL 和虚拟机平台功能
+   - 下载 Ubuntu 22.04 WSL 镜像
+   - 导入到 D:\wsl\ubuntu22
+   - 配置默认用户
+
+#### 步骤 2: 在 WSL2 中配置 CUDA、PyTorch 和项目
+
+1. 启动 WSL2：
+
+```powershell
+wsl
+```
+
+2. 运行环境配置脚本：
+
+```bash
+cd /mnt/d/data/PycharmProjects/PythonProject1/scripts
+chmod +x wsl2-setup-cuda-pytorch.sh
+./wsl2-setup-cuda-pytorch.sh
+```
+
+3. 脚本会自动安装：
+   - 基础开发工具（build-essential, cmake, git 等）
+   - Python 3 + pip + venv
+   - 音视频处理工具（FFmpeg, Sox 等）
+   - CUDA Toolkit 12.1
+   - cuDNN
+   - PyTorch 2.1 with CUDA
+   - 机器学习工具（transformers, tensorboard 等）
+   - TTS 相关依赖
+   - 克隆并配置项目
+
+4. 启动服务：
+
+```bash
+cd ~/projects/gi005
+./start-standalone.sh
+```
+
+5. 访问: http://localhost:8080
+
+**详细文档**: `docs/WSL2-D盘安装详细指南.md`
+
+---
 
 ### 方式一: 完全自动化（推荐）
 
