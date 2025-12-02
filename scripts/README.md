@@ -17,31 +17,40 @@ C:\Users\<用户名>\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu22.04onW
 #### 方案 A: WSL2 在 C 盘，项目在 WSL2 内部（默认）
 - ✅ 性能最佳
 - ✅ 配置简单
-- ❌ 占用 C 盘空间
+- ❌ 占用 C 盘空间（5-10GB）
 - **适合**: C 盘空间充足（>30GB）
 
-#### 方案 B: 迁移 WSL2 到 D 盘（推荐）
+#### 方案 B: 迁移 WSL2 到 D 盘
 - ✅ 性能最佳
-- ✅ 不占用 C 盘
-- ⚠️ 需要迁移操作
-- **适合**: C 盘空间不足
+- ✅ 完全不占用 C 盘
+- ⚠️ 需要迁移操作（5-10分钟）
+- **适合**: C 盘空间不足，彻底迁移
 
-#### 方案 C: WSL2 在 C 盘，项目在 D 盘
+#### 方案 C: WSL2 在 C 盘，项目在 D 盘（跨文件系统）
 - ✅ 不占用 WSL2 C 盘空间
-- ❌ 性能较差（跨文件系统）
+- ❌ 性能较差（跨文件系统，下降 50-70%）
 - ⚠️ 不推荐用于生产环境
 - **适合**: 测试或临时使用
+
+#### 方案 D: 软链接方案（⭐ 强烈推荐，C/D 同盘）
+- ⭐ **性能最佳**（WSL2 原生）
+- ⭐ **项目数据在 D 盘**（节省 C 盘）
+- ⭐ **同盘无性能损失**（C/D 同一物理磁盘）
+- ⭐ **配置简单**（自动化脚本）
+- ✅ 访问透明，应用无感知
+- **适合**: C/D 盘是同一块固态硬盘的不同分区（您的情况）
 
 ---
 
 ## 文件列表
 
-| 脚本 | 平台 | 用途 |
-|------|------|------|
-| `install-wsl2.ps1` | Windows PowerShell | 自动安装 WSL2 和 Ubuntu（C 盘） |
-| `move-wsl-to-d-drive.ps1` | Windows PowerShell | 迁移已有 WSL2 到 D 盘 |
-| `wsl2-setup.sh` | WSL2/Linux | 自动配置并部署项目（WSL2 内部，推荐） |
-| `wsl2-setup-on-d-drive.sh` | WSL2/Linux | 部署项目到 D 盘（跨文件系统，性能较慢） |
+| 脚本 | 平台 | 用途 | 推荐度 |
+|------|------|------|--------|
+| `install-wsl2.ps1` | Windows PowerShell | 自动安装 WSL2 和 Ubuntu（C 盘） | ⭐⭐⭐⭐ |
+| `wsl2-setup-with-symlink.sh` | WSL2/Linux | **软链接部署**（C/D 同盘最佳） | ⭐⭐⭐⭐⭐ |
+| `wsl2-setup.sh` | WSL2/Linux | 项目部署在 WSL2 内部（C 盘） | ⭐⭐⭐⭐ |
+| `move-wsl-to-d-drive.ps1` | Windows PowerShell | 迁移已有 WSL2 到 D 盘 | ⭐⭐⭐⭐ |
+| `wsl2-setup-on-d-drive.sh` | WSL2/Linux | 部署到 D 盘（跨文件系统，慢） | ⭐⭐ |
 
 ---
 
@@ -136,6 +145,60 @@ wsl
 **磁盘使用情况**:
 - 迁移后 C 盘释放约 2-5GB
 - D 盘占用约 5-10GB（WSL2 系统 + 项目）
+
+---
+
+### 方式一D: 软链接方案（⭐ 强烈推荐，C/D 同盘）
+
+**适用场景**: C 盘和 D 盘是同一块固态硬盘的不同分区
+
+**原理**:
+- WSL2 安装在 C 盘（性能最佳）
+- 项目实际存储在 D 盘（节省 C 盘空间）
+- 使用软链接连接两者（访问透明，无性能损失）
+
+#### 部署步骤
+
+1. 先安装 WSL2（按方式一的步骤 1）
+
+2. 在 WSL2 中运行软链接部署脚本：
+
+```bash
+wsl
+cd /mnt/d/data/PycharmProjects/PythonProject1/scripts
+chmod +x wsl2-setup-with-symlink.sh
+./wsl2-setup-with-symlink.sh
+```
+
+3. 脚本会自动：
+   - 在 D 盘创建 `/mnt/d/WSL2-Projects/gi005`（实际存储）
+   - 克隆项目到 D 盘
+   - 创建软链接 `~/projects/gi005` → D 盘项目
+   - 配置虚拟环境和依赖
+   - 恢复模型文件
+
+4. 验证软链接：
+
+```bash
+ls -la ~/projects/gi005
+# 输出: lrwxrwxrwx ... /home/user/projects/gi005 -> /mnt/d/WSL2-Projects/gi005
+
+readlink ~/projects/gi005
+# 输出: /mnt/d/WSL2-Projects/gi005
+```
+
+5. 启动服务：
+
+```bash
+cd ~/projects/gi005
+./start-standalone.sh
+```
+
+**优势总结**:
+- ⭐ WSL2 性能 100%（在 C 盘）
+- ⭐ 项目数据在 D 盘（节省 C 盘 3-8GB）
+- ⭐ 同盘无性能损失（同一固态硬盘）
+- ⭐ 访问路径不变（对应用透明）
 
 ---
 
