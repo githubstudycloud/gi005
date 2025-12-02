@@ -2,12 +2,46 @@
 
 Voice Clone TTS 项目的自动化安装和部署脚本集合。
 
+---
+
+## ⚠️ 重要说明: WSL2 安装位置
+
+### 默认情况
+WSL2 **默认安装在 C 盘**，位置：
+```
+C:\Users\<用户名>\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu22.04onWindows_...\
+```
+
+### 方案选择
+
+#### 方案 A: WSL2 在 C 盘，项目在 WSL2 内部（默认）
+- ✅ 性能最佳
+- ✅ 配置简单
+- ❌ 占用 C 盘空间
+- **适合**: C 盘空间充足（>30GB）
+
+#### 方案 B: 迁移 WSL2 到 D 盘（推荐）
+- ✅ 性能最佳
+- ✅ 不占用 C 盘
+- ⚠️ 需要迁移操作
+- **适合**: C 盘空间不足
+
+#### 方案 C: WSL2 在 C 盘，项目在 D 盘
+- ✅ 不占用 WSL2 C 盘空间
+- ❌ 性能较差（跨文件系统）
+- ⚠️ 不推荐用于生产环境
+- **适合**: 测试或临时使用
+
+---
+
 ## 文件列表
 
 | 脚本 | 平台 | 用途 |
 |------|------|------|
-| `install-wsl2.ps1` | Windows PowerShell | 自动安装 WSL2 和 Ubuntu |
-| `wsl2-setup.sh` | WSL2/Linux | 自动配置 WSL2 环境并部署项目 |
+| `install-wsl2.ps1` | Windows PowerShell | 自动安装 WSL2 和 Ubuntu（C 盘） |
+| `move-wsl-to-d-drive.ps1` | Windows PowerShell | 迁移已有 WSL2 到 D 盘 |
+| `wsl2-setup.sh` | WSL2/Linux | 自动配置并部署项目（WSL2 内部，推荐） |
+| `wsl2-setup-on-d-drive.sh` | WSL2/Linux | 部署项目到 D 盘（跨文件系统，性能较慢） |
 
 ---
 
@@ -65,9 +99,83 @@ cd ~/projects/gi005
 
 6. 在浏览器访问: http://localhost:8080
 
+**注意**: 此方式项目部署在 WSL2 内部（C 盘），占用约 5-10GB 空间。
+
 ---
 
-### 方式二: 手动安装 WSL2
+### 方式一B: 迁移 WSL2 到 D 盘（推荐，如果 C 盘空间不足）
+
+**前提**: 已使用方式一安装了 WSL2
+
+#### 迁移步骤
+
+1. 以**管理员身份**打开 PowerShell
+
+2. 运行迁移脚本：
+
+```powershell
+cd D:\data\PycharmProjects\PythonProject1\scripts
+.\move-wsl-to-d-drive.ps1
+```
+
+3. 按照提示操作：
+   - 脚本会导出当前 WSL2 到 D:\WSL2\Backup
+   - 注销当前的 Ubuntu
+   - 从备份导入到 D:\WSL2\Distros\Ubuntu-22.04
+   - 验证安装
+
+4. 迁移完成后，启动 WSL 验证：
+
+```powershell
+wsl
+# 应该正常进入 Ubuntu
+```
+
+5. 项目文件仍在 ~/projects/gi005，无需重新部署
+
+**磁盘使用情况**:
+- 迁移后 C 盘释放约 2-5GB
+- D 盘占用约 5-10GB（WSL2 系统 + 项目）
+
+---
+
+### 方式二: 项目部署到 D 盘（性能较慢，不推荐）
+
+**适用场景**: WSL2 在 C 盘，但项目想放在 D 盘（跨文件系统）
+
+#### 步骤
+
+1. 启动 WSL2：
+
+```bash
+wsl
+```
+
+2. 运行 D 盘部署脚本：
+
+```bash
+cd /mnt/d/data/PycharmProjects/PythonProject1/scripts
+chmod +x wsl2-setup-on-d-drive.sh
+./wsl2-setup-on-d-drive.sh
+```
+
+3. 项目将部署到: `/mnt/d/WSL2-Projects/gi005`
+
+4. 使用快捷命令：
+
+```bash
+gi005              # 进入项目目录
+gi005-start        # 启动服务
+```
+
+**性能警告**:
+- 跨文件系统访问（WSL2 → Windows）性能下降 50-70%
+- 不推荐用于生产环境
+- 建议使用方式一B迁移 WSL2 到 D 盘
+
+---
+
+### 方式三: 手动安装 WSL2
 
 如果自动脚本失败，可以手动安装：
 
